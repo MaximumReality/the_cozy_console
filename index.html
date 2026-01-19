@@ -16,50 +16,6 @@
     font-family: 'Courier New', monospace;
     color: var(--terminal-green);
     overflow: hidden;
-    /* Text Glow Effect */
-    text-shadow: 0 0 5px var(--glow-color);
-  }
-
-  #terminal {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    padding: 30px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-  }
-
-  #output {
-    flex-grow: 1;
-    white-space: pre-wrap;
-    line-height: 1.5em;
-    overflow-y: auto;
-    margin-bottom: 60px;
-    scrollbar-width: none; /* Hide scrollbar for Firefox */
-  }
-
-  #output::-webkit-scrollbar { display: none; } /* Hide scrollbar for Chrome/Safari */
-
-  #inputBar {
-    position: fixed;
-    bottom: 20px;
-    left: 30px;
-    width: calc(100% - 200px); /* Leave room for Azul */
-    display: flex;
-    background: rgba(0,0,0,0.8);
-    border-top: 1px solid var(--terminal-green);
-    padding-top: 10px;
-  }
-
-  #userInput {
-    flex-grow: 1;
-    background: transparent;
-    border: none;
-    color: var(--terminal-green);
-    font-family: inherit;
-    font-size: 1.2rem;
-    outline: none;
   }
 
   /* --- CRT & Scanline Effects --- */
@@ -76,39 +32,90 @@
     );
     background-size: 100% 4px, 3px 100%;
     pointer-events: none;
-    z-index: 10;
+    z-index: 100;
     animation: flicker 0.15s infinite;
+    opacity: 0.3;
   }
 
   @keyframes flicker {
-    0% { opacity: 0.9; }
-    50% { opacity: 1; }
-    100% { opacity: 0.9; }
+    0% { opacity: 0.25; }
+    50% { opacity: 0.35; }
+    100% { opacity: 0.25; }
   }
 
-  /* --- Azul Sprite with Float Animation --- */
+  #terminal {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    text-shadow: 2px 0 1px rgba(255,0,0,0.3), -2px 0 1px rgba(0,0,255,0.3), 0 0 5px var(--glow-color);
+  }
+
+  #output {
+    flex-grow: 1;
+    white-space: pre-wrap;
+    line-height: 1.5em;
+    overflow-y: auto;
+    margin-bottom: 80px;
+    scrollbar-width: none;
+  }
+  #output::-webkit-scrollbar { display: none; }
+
+  #inputBar {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: calc(100% - 180px);
+    display: flex;
+    background: rgba(0,0,0,0.8);
+    border-top: 1px solid var(--terminal-green);
+    padding-top: 10px;
+    z-index: 10;
+  }
+
+  #userInput {
+    flex-grow: 1;
+    background: transparent;
+    border: none;
+    color: var(--terminal-green);
+    font-family: inherit;
+    font-size: 1rem;
+    outline: none;
+  }
+
+  /* --- Azul Sprite Styling --- */
   #azulContainer {
     position: fixed;
     bottom: 20px;
-    right: 40px;
-    width: 150px;
+    right: 20px;
+    width: 120px;
     text-align: center;
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 10;
   }
 
   #azulSprite {
     width: 100%;
     height: auto;
-    transition: transform 0.3s ease;
     filter: drop-shadow(0 0 10px var(--glow-color));
   }
 
-  .floating {
-    animation: float 3s ease-in-out infinite;
-  }
-
+  .floating { animation: float 3s ease-in-out infinite; }
   @keyframes float {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-15px); }
+  }
+
+  .flying-active {
+    animation: shake 0.1s infinite !important;
+  }
+  @keyframes shake {
+    0% { transform: translate(1px, 1px); }
+    50% { transform: translate(-2px, -1px); }
+    100% { transform: translate(1px, 1px); }
   }
 </style>
 </head>
@@ -120,45 +127,47 @@
   <div id="output"></div>
   <div id="inputBar">
     <span style="margin-right:10px;">></span>
-    <input type="text" id="userInput" autofocus autocomplete="off">
+    <input type="text" id="userInput" autofocus autocomplete="off" placeholder="Ask Azul...">
   </div>
 </div>
 
-<div id="azulContainer">
-  <img id="azulSprite" class="floating" src="idle_azul.png" alt="Azul">
+<div id="azulContainer" class="floating">
+  <img id="azulSprite" src="idle_azul.png" alt="Azul">
 </div>
 
 <script>
 const output = document.getElementById('output');
 const input = document.getElementById('userInput');
 const azul = document.getElementById('azulSprite');
+const azulCont = document.getElementById('azulContainer');
 
-// --- Audio Engine (Synthesized Beeps) ---
+// --- Audio ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playBeep(freq = 400, duration = 0.05) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'square';
     osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.005, audioCtx.currentTime);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.start();
     osc.stop(audioCtx.currentTime + duration);
 }
 
-// --- Terminal Typing Logic ---
+// --- Terminal Logic ---
 async function typeText(text) {
     for (let char of text) {
         output.textContent += char;
-        if (char !== " ") playBeep(600 + (Math.random() * 100));
+        if (char !== " ") playBeep(500 + (Math.random() * 200));
         output.scrollTop = output.scrollHeight;
-        await new Promise(r => setTimeout(r, 30));
+        await new Promise(r => setTimeout(r, 40));
     }
     output.textContent += "\n\n";
 }
 
-// --- Logic for Azul's Behavior ---
+// --- Azul States ---
 const azulStates = {
     idle: 'idle_azul.png',
     waiting: 'waiting_azul.png',
@@ -168,43 +177,77 @@ const azulStates = {
 
 function setAzul(state) {
     azul.src = azulStates[state];
-    // Add logic to change CSS classes based on state
-    if(state === 'flying') azul.parentElement.style.transform = 'scale(1.1) translateY(-50px)';
-    else azul.parentElement.style.transform = 'scale(1) translateY(0)';
+    if(state === 'flying') {
+        azulCont.classList.add('flying-active');
+        azulCont.style.transform = 'scale(1.2) translateY(-80px)';
+    } else {
+        azulCont.classList.remove('flying-active');
+        azulCont.style.transform = 'scale(1) translateY(0)';
+    }
 }
 
-// --- Mock API Response ---
-async function getResponse(query) {
-    await new Promise(r => setTimeout(r, 1000)); // Simulate thinking
-    const db = {
-        "hello": "Greetings, User. Systems fully operational.",
-        "status": "All systems green. Fuel: 98%. Curiosity: 100%.",
-        "nasa": "Connecting to deep space network... NASA data retrieved: The James Webb telescope is amazing!"
+// --- Knowledge Logic ---
+async function getAnswer(query) {
+    const q = query.toLowerCase();
+    if (q.includes("space") || q.includes("nasa") || q.includes("star")) {
+        try {
+            const res = await fetch('https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY');
+            const data = await res.json();
+            return `NASA DATA: Today's subject is ${data.title}. ${data.explanation.substring(0, 100)}...`;
+        } catch (e) {
+            return "Connection to NASA failed. Accessing local backup: The universe is vast and mostly empty space.";
+        }
+    }
+    
+    const local = {
+        "hello": "System online. Greetings, Operator.",
+        "azul": "I am Azul. I navigate this terminal to find the data you require.",
+        "clear": "Memory wiped (visually).",
+        "help": "Try asking about 'space', 'nasa', or 'azul'."
     };
-    const key = Object.keys(db).find(k => query.toLowerCase().includes(k));
-    return db[key] || "I've searched my database, but no records were found for that query.";
+
+    for (let key in local) {
+        if (q.includes(key)) return local[key];
+    }
+    return "Query unrecognized. Searching outer rim... No data found.";
 }
 
-// --- Main Event Loop ---
-input.addEventListener('keypress', async (e) => {
+// --- Input Loop ---
+let history = [];
+let historyIndex = -1;
+
+input.addEventListener('keydown', async (e) => {
     if (e.key === 'Enter') {
         const val = input.value.trim();
         if (!val) return;
         
+        history.push(val);
+        historyIndex = history.length;
         input.value = "";
-        output.textContent += `\nUSER: ${val}\n`;
-        
+        output.textContent += `> ${val}\n`;
+
         setAzul('waiting');
-        const reply = await getResponse(val);
+        const reply = await getAnswer(val);
         
         setAzul('flying');
+        await new Promise(r => setTimeout(r, 800));
+        
+        setAzul('hover');
         await typeText(`AZUL: ${reply}`);
         setAzul('idle');
     }
+    
+    // History Navigation (Up Arrow)
+    if (e.key === 'ArrowUp' && history.length > 0) {
+        historyIndex = Math.max(0, historyIndex - 1);
+        input.value = history[historyIndex];
+    }
 });
 
-// Initial Welcome
-window.onload = () => typeText("SYSTEM BOOT SEQUENCE COMPLETE... \nWELCOME, OPERATOR. HOW CAN AZUL HELP TODAY?");
+// Start
+window.onload = () => {
+    typeText("COZY CONSOLE v1.0.4\nREADY FOR INPUT...");
+};
 </script>
 </body>
 </html>
