@@ -145,15 +145,9 @@ async function typeText(text, url = null, geo = null) {
     output.scrollTop = output.scrollHeight;
 }
 
-function showTrivia() {
-    const fact = triviaFacts[Math.floor(Math.random() * triviaFacts.length)];
-    typeText(`OMNI-FACT: ${fact}`);
-}
-
 async function searchWiki(query) {
     try {
-        // Clean common student questions to find the core subject
-        let cleanQuery = query.replace(/how many|what is|where is|tell me about|who was/gi, "").trim();
+        let cleanQuery = query.replace(/how many|what is|where is|tell me about|who was|define|definition of/gi, "").trim();
         
         const sUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(cleanQuery)}&format=json&origin=*&srlimit=5`;
         const sRes = await fetch(sUrl);
@@ -161,10 +155,8 @@ async function searchWiki(query) {
         
         if (sData.query.search.length > 0) {
             let resultIndex = 0;
-            // Enhanced blacklist to keep research academic
             const blacklist = ["phrase", "idiom", "exclamation", "song", "album", "film", "fictional"];
             
-            // Loop through top 5 results to find the first one that isn't pop culture
             for(let i=0; i < sData.query.search.length; i++) {
                 let snippet = sData.query.search[i].snippet.toLowerCase();
                 let title = sData.query.search[i].title.toLowerCase();
@@ -186,6 +178,7 @@ async function searchWiki(query) {
 async function handleQuery(q) {
     let val = q.toLowerCase().trim();
     
+    // Math Logic
     if (val.match(/(\d+)\s*([x\*\+\-\/])\s*(\d+)/)) {
         const math = val.match(/(\d+)\s*([x\*\+\-\/])\s*(\d+)/);
         const n1=parseInt(math[1]), op=math[2], n2=parseInt(math[3]);
@@ -193,10 +186,17 @@ async function handleQuery(q) {
         return { text: `RESULT: ${r}` };
     }
 
-    if (val.includes("cite")) return { text: "CITATIONS: Use MLA (Author. 'Title.' Container, Year) or APA (Author, Year). For university level, check Purdue OWL.", url: "https://owl.purdue.edu/owl/research_and_citation/resources.html" };
+    // Glossary Logic
+    if (val.startsWith("define ") || val.startsWith("definition of ")) {
+        const word = val.replace("define ", "").replace("definition of ", "");
+        const data = await searchWiki(word);
+        if (data) return { text: `GLOSSARY [${data.title}]: ${data.extract}`, url: data.content_urls?.desktop.page };
+    }
+
+    if (val.includes("cite")) return { text: "CITATIONS: Use MLA or APA format. Link provided.", url: "https://owl.purdue.edu/owl/research_and_citation/resources.html" };
 
     const status = document.createElement("div");
-    status.textContent = "AZUL: SCANNING ARCHIVES...";
+    status.textContent = "AZUL: ANALYZING DATABASE...";
     output.appendChild(status);
     
     const data = await searchWiki(val);
@@ -204,11 +204,9 @@ async function handleQuery(q) {
 
     if (data && data.extract) {
         let coords = data.coordinates ? `${data.coordinates.lat.toFixed(4)}, ${data.coordinates.lon.toFixed(4)}` : null;
-        let responseText = data.type === 'disambiguation' ? "Multiple academic records found. Please specify your research topic." : data.extract;
-        
-        return { text: responseText, url: data.content_urls?.desktop.page, geo: coords };
+        return { text: data.extract, url: data.content_urls?.desktop.page, geo: coords };
     }
-    return { text: "AZUL: Record not found. Please refine your query keywords for academic depth." };
+    return { text: "AZUL: Data insufficient. Please refine parameters." };
 }
 
 input.addEventListener('keydown', async (e) => {
@@ -218,18 +216,30 @@ input.addEventListener('keydown', async (e) => {
         input.value = "";
         
         const userLine = document.createElement("div");
-        userLine.style.color = "white"; // Make user input distinct
-        userLine.textContent = `> USER_QUERY: ${val}`;
+        userLine.style.color = "white";
+        userLine.textContent = `> RESEARCH_INPUT: ${val}`;
         output.appendChild(userLine);
         
         const res = await handleQuery(val);
-        sessionNotes += `[RESEARCH] ${val}: ${res.text.substring(0,40)}...\n`;
+        sessionNotes += `[LOG] ${val}\n`;
+        
+        // Visual Trigger for biology students
+        if (val.includes("cow") && val.includes("stomach")) {
+            output.innerHTML += `<div></div>`;
+        }
+
         await typeText(`AZUL: ${res.text}`, res.url, res.geo);
     }
 });
 
-window.onload = () => typeText("OMNI-AZUL v1.0 ONLINE. RESEARCH PROTOCOLS ACTIVE.");
+function showTrivia() {
+    const fact = triviaFacts[Math.floor(Math.random() * triviaFacts.length)];
+    typeText(`OMNI-FACT: ${fact}`);
+}
+
+window.onload = () => typeText("OMNI-AZUL RESEARCH TERMINAL v1.0: ONLINE.");
 </script>
+
 
 
 
