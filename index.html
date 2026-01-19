@@ -3,17 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Azul: Study Partner</title>
+<title>Azul: University Study Partner</title>
 <style>
   :root { --terminal-green: #00ff41; --glow-color: rgba(0, 255, 65, 0.6); }
   body, html { margin: 0; padding: 0; height: 100%; background: #050505; font-family: 'Courier New', monospace; color: var(--terminal-green); overflow: hidden; }
+  
   #scanlines { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.05)); background-size: 100% 3px, 3px 100%; pointer-events: none; z-index: 100; opacity: 0.3; }
-  #terminal { position: relative; width: 100%; height: 100%; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; }
+  
+  #terminal { position: relative; width: 100%; height: 100dvh; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; }
+  
   #output { flex-grow: 1; white-space: pre-wrap; line-height: 1.5em; overflow-y: auto; margin-bottom: 90px; text-shadow: 0 0 5px var(--glow-color); }
+  
+  /* Link Styling */
+  a { color: #fff; text-decoration: underline; cursor: pointer; }
+
   #inputBar { position: fixed; bottom: 20px; left: 20px; width: calc(100% - 160px); display: flex; background: rgba(0,0,0,0.9); border-top: 1px solid var(--terminal-green); padding-top: 10px; z-index: 10; }
+  
   #userInput { flex-grow: 1; background: transparent; border: none; color: var(--terminal-green); font-family: inherit; font-size: 1rem; outline: none; }
+  
   #azulContainer { position: fixed; bottom: 20px; right: 20px; width: 120px; transition: all 0.5s ease; z-index: 20; }
   #azulSprite { width: 100%; filter: drop-shadow(0 0 10px var(--glow-color)); }
+  
   .bobbing { animation: bob 3s ease-in-out infinite; }
   @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
   .flying-fx { animation: shake 0.1s infinite; }
@@ -26,7 +36,7 @@
   <div id="output"></div>
   <div id="inputBar">
     <span style="margin-right:10px;">></span>
-    <input type="text" id="userInput" autofocus autocomplete="off">
+    <input type="text" id="userInput" autofocus autocomplete="off" spellcheck="false">
   </div>
 </div>
 <div id="azulContainer" class="bobbing"><img id="azulSprite" src="waiting_azul.png"></div>
@@ -48,14 +58,24 @@ function playBeep(freq) {
     osc.start(); osc.stop(audioCtx.currentTime + 0.05);
 }
 
-async function typeText(text) {
-    for (let char of text) {
-        output.textContent += char;
-        playBeep(400 + Math.random() * 200);
-        output.scrollTop = output.scrollHeight;
-        await new Promise(r => setTimeout(r, 30));
+async function typeText(text, isLink = false) {
+    if (isLink) {
+        const link = document.createElement('a');
+        link.href = text;
+        link.target = "_blank";
+        link.textContent = "[SOURCE ARCHIVE]";
+        output.appendChild(link);
+        output.innerHTML += "\n\n";
+    } else {
+        for (let char of text) {
+            output.textContent += char;
+            playBeep(400 + Math.random() * 200);
+            output.scrollTop = output.scrollHeight;
+            await new Promise(r => setTimeout(r, 25));
+        }
+        output.textContent += "\n";
     }
-    output.textContent += "\n\n";
+    output.scrollTop = output.scrollHeight;
 }
 
 function setAzul(state) {
@@ -66,35 +86,47 @@ function setAzul(state) {
     else if (state === 'hover') { azul.src = 'hover-azul.png'; azulCont.style.transform = 'translateY(-30px)'; }
 }
 
-// --- NEW: Wikipedia Logic ---
 async function searchWikipedia(subject) {
     const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(subject)}`;
     try {
         const response = await fetch(url);
+        if (!response.ok) return null;
         const data = await response.json();
-        if (data.extract) {
-            return `WIKIPEDIA: ${data.extract}`;
-        }
-        return null;
-    } catch (e) {
-        return null;
-    }
+        return data;
+    } catch (e) { return null; }
 }
 
 async function getAnswer(query) {
-    const q = query.toLowerCase();
+    let q = query.toLowerCase().trim();
 
-    // 1. Check Local Knowledge First
-    if (q.includes("moon")) return "The Moon is Earth's natural satellite, about 384,400 km away. It influences our tides!";
-    if (q.includes("hello")) return "Hello! I am ready to study. Ask me about a topic like 'Photosynthesis' or 'Mars'.";
-    if (q.includes("clear")) { output.textContent = ""; return "Terminal cleared."; }
+    // --- MATH SOLVER ---
+    if (q.includes("=")) {
+        if (q.includes("+")) {
+            const parts = q.split(/[+=]/);
+            const a = parseInt(parts[1]); const b = parseInt(parts[2]);
+            return { text: `ALGEBRA: To find x in x + ${a} = ${b}, subtract ${a} from both sides. x = ${b - a}.` };
+        }
+        const multMatch = q.match(/(\d+)x\s*=\s*(\d+)/);
+        if (multMatch) {
+            const a = parseInt(multMatch[1]); const b = parseInt(multMatch[2]);
+            return { text: `ALGEBRA: Divide both sides by ${a}. x = ${b / a}.` };
+        }
+    }
 
-    // 2. Deep Research: Wikipedia
-    output.textContent += "SEARCHING DATABASE...\n";
-    const wikiResult = await searchWikipedia(query);
-    if (wikiResult) return wikiResult;
+    if (q === "clear") { output.textContent = ""; return { text: "Terminal wiped." }; }
 
-    return "I couldn't find specific data on that. Try using a single word like 'Atom' or 'History'.";
+    // --- WIKIPEDIA RESEARCH ---
+    let subject = q.replace(/how|what|is|are|the|find|search|tell|me|about/g, "").trim();
+    if (!subject) subject = q;
+
+    output.textContent += `ACCESSING ARCHIVES: ${subject.toUpperCase()}...\n`;
+    const data = await searchWikipedia(subject);
+    
+    if (data && data.extract) {
+        return { text: `WIKIPEDIA: ${data.extract}`, url: data.content_urls.desktop.page };
+    }
+
+    return { text: "I couldn't find that specific data. Try a direct topic name." };
 }
 
 input.addEventListener('keydown', async (e) => {
@@ -103,18 +135,23 @@ input.addEventListener('keydown', async (e) => {
         if (!val) return;
         input.value = "";
         output.textContent += `> ${val}\n`;
+        
         setAzul('idle');
-        const reply = await getAnswer(val);
+        const result = await getAnswer(val);
+        
         setAzul('flying');
-        await new Promise(r => setTimeout(r, 700));
+        await new Promise(r => setTimeout(r, 600));
+        
         setAzul('hover');
-        await typeText(`AZUL: ${reply}`);
-        await new Promise(r => setTimeout(r, 2000));
+        await typeText(`AZUL: ${result.text}`);
+        if (result.url) await typeText(result.url, true);
+        
+        await new Promise(r => setTimeout(r, 1500));
         setAzul('waiting');
     }
 });
 
-window.onload = () => typeText("STUDY PARTNER ONLINE. TYPE A TOPIC TO RESEARCH.");
+window.onload = () => typeText("STUDY MODE ACTIVE. RESEARCH ANY TOPIC OR SOLVE FOR X.");
 </script>
 </body>
 </html>
