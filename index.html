@@ -12,13 +12,13 @@
     :root { --terminal-green: #00ff41; --glow-color: rgba(0, 255, 65, 0.6); --header-bg: #111; }
     body, html { margin: 0; padding: 0; height: 100%; background: #050505; font-family: 'Courier New', monospace; color: var(--terminal-green); overflow: hidden; }
 
-    /* Print Logic */
+    /* Print Formatting */
     @media print {
       #toolbar, #inputBar, #azulContainer, .btn-ui, #overlay { display: none !important; }
       body { background: white; color: black; overflow: visible; }
       #terminal { margin: 0; padding: 0; height: auto; margin-top: 0; }
       #output { text-shadow: none; color: black; overflow: visible; }
-      a { color: black; text-decoration: underline; }
+      a { color: black; text-decoration: underline; font-weight: bold; }
     }
 
     /* Toolbar */
@@ -44,38 +44,22 @@
     .btn-ui { background: var(--terminal-green); color: black; border: none; padding: 5px 10px; font-weight: bold; cursor: pointer; text-decoration: none; border-radius: 3px; font-size: 0.8rem; }
     #homeBtn { font-size: 1.2rem; background: transparent; color: var(--terminal-green); border: 1px solid var(--terminal-green); }
 
-    /* Overlay */
-    #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    #guide { background: #000; border: 2px solid var(--terminal-green); padding: 25px; max-width: 400px; text-align: left; }
-    
+    /* UI Elements */
     #azulContainer { position: fixed; bottom: 20px; right: 20px; width: 110px; z-index: 20; pointer-events: none; }
     #azulSprite { width: 100%; filter: drop-shadow(0 0 10px var(--glow-color)); }
     .bobbing { animation: bob 3s ease-in-out infinite; }
     @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
     a { color: #fff; text-decoration: underline; }
-    .diagram-note { border: 1px dashed var(--terminal-green); padding: 10px; margin: 10px 0; font-size: 0.9rem; }
   </style>
 </head>
 <body>
 
-<div id="overlay">
-  <div id="guide">
-    <h2 style="margin-top:0; color:white;">OMNI-AZUL v1.0</h2>
-    <p>• <strong>SEARCH:</strong> Precise academic summaries.</p>
-    <p>• <strong>LOCATE:</strong> City names return coordinates.</p>
-    <p>• <strong>SOLVE:</strong> Direct math and citation help.</p>
-    <p>• <strong>TRIVIA:</strong> Quantum and Anatomy facts.</p>
-    <button class="btn-ui" style="width:100%; padding:10px;" onclick="document.getElementById('overlay').style.display='none'">BOOT SYSTEM</button>
-  </div>
-</div>
-
 <div id="toolbar">
   <a href="https://maximumreality.xyz" class="btn-ui" id="homeBtn">🏡</a>
   <div class="toolbar-group">
-    <button class="btn-ui" onclick="output.textContent=''; typeText('TERMINAL PURGED. WAITING...')">🗑️</button>
+    <button class="btn-ui" onclick="output.textContent=''; typeText('TERMINAL PURGED...')">🗑️</button>
     <button class="btn-ui" onclick="showTrivia()">FACT</button>
-    <button class="btn-ui" onclick="alert(sessionNotes || 'No notes yet!')">LOG</button>
-    <button class="btn-ui" onclick="window.print()">PRINT</button>
+    <button class="btn-ui" onclick="window.print()">🖨️</button>
   </div>
 </div>
 
@@ -84,7 +68,9 @@
   <div id="inputBar"><span>> </span><input type="text" id="userInput" autofocus autocomplete="off" spellcheck="false"></div>
 </div>
 
-<div id="azulContainer" class="bobbing"><img id="azulSprite" src="waiting_azul.png"></div>
+<div id="azulContainer" class="bobbing">
+  <img id="azulSprite" src="waiting_azul.png">
+</div>
 
 <script>
 const output = document.getElementById('output');
@@ -92,23 +78,24 @@ const input = document.getElementById('userInput');
 let sessionNotes = "";
 
 const triviaFacts = [
-    "QUANTUM: Atoms are 99.9999% empty space. The whole human race could fit in a sugar cube.",
-    "ANATOMY: Your blood vessels could circle the Earth 4 times if laid end-to-end.",
+    "QUANTUM: Atoms are 99.9999% empty space.",
+    "ANATOMY: Your blood vessels could circle the Earth 4 times.",
     "SPACE: One day on Venus is longer than its entire year.",
-    "PHYSICS: Light takes 8 minutes and 20 seconds to travel from the Sun to Earth.",
-    "ANATOMY: The human brain operates on about 20 watts of power."
+    "PHYSICS: Light takes 8m 20s to travel from the Sun to Earth.",
+    "CYBERNETICS: The first computer 'bug' was an actual moth in 1947."
 ];
 
-async function typeText(text, url = null, geo = null) {
+async function typeText(text, url = null) {
     let messageSpan = document.createElement("div"); 
     messageSpan.style.marginBottom = "15px";
     output.appendChild(messageSpan);
-    let displayText = geo ? `${text}\nCOORDINATES: ${geo}` : text;
-    for (let char of displayText) {
+    
+    for (let char of text) {
         messageSpan.textContent += char; 
         output.scrollTop = output.scrollHeight;
         await new Promise(r => setTimeout(r, 15));
     }
+
     if (url) {
         const linkAnchor = document.createElement("a");
         linkAnchor.href = url;
@@ -116,7 +103,6 @@ async function typeText(text, url = null, geo = null) {
         linkAnchor.textContent = "[SOURCE: VIEW ACADEMIC ARCHIVE]";
         linkAnchor.style.display = "block";
         linkAnchor.style.marginTop = "8px";
-        linkAnchor.style.color = "#fff";
         messageSpan.appendChild(linkAnchor);
     }
     output.scrollTop = output.scrollHeight;
@@ -124,60 +110,42 @@ async function typeText(text, url = null, geo = null) {
 
 async function searchWiki(query) {
     try {
-        let cleanQuery = query.replace(/how many|what is|where is|define/gi, "").trim();
-        const sUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(cleanQuery)}&format=json&origin=*&srlimit=5`;
+        let clean = query.replace(/how many|what is|define/gi, "").trim();
+        const sUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(clean)}&format=json&origin=*&srlimit=5`;
         const sRes = await fetch(sUrl);
         const sData = await sRes.json();
+        
         if (sData.query.search.length > 0) {
-            let resultIndex = 0;
-            const blacklist = ["phrase", "idiom", "tripe", "recipe", "cuisine", "song"];
-            for(let i=0; i < sData.query.search.length; i++) {
-                let title = sData.query.search[i].title.toLowerCase();
-                if (!blacklist.some(word => title.includes(word))) {
-                    resultIndex = i;
-                    break;
+            let idx = 0;
+            const blacklist = ["phrase", "idiom", "tripe", "recipe"];
+            for(let i=0; i<sData.query.search.length; i++) {
+                if (!blacklist.some(w => sData.query.search[i].title.toLowerCase().includes(w))) {
+                    idx = i; break;
                 }
             }
-            const title = sData.query.search[resultIndex].title;
-            const sumUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}?redirect=true`;
-            const res = await fetch(sumUrl);
+            const title = sData.query.search[idx].title;
+            const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}?redirect=true`);
             return await res.json();
         }
     } catch (e) { return null; }
-    return null;
 }
 
 async function handleQuery(q) {
     let val = q.toLowerCase().trim();
     
-    // 1. CORE BIOLOGY OVERRIDE
-    if (val.includes("how many stomachs") && val.includes("cow")) {
+    // Core Fact Override
+    if (val.includes("cow") && val.includes("stomach")) {
         return { 
-            text: "Cows have ONE stomach with FOUR distinct compartments: the Rumen, Reticulum, Omasum, and Abomasum. They are 'ruminants,' meaning they chew cud to break down tough cellulose.",
-            url: "https://en.wikipedia.org/wiki/Ruminant"
+            text: "Cows have one stomach with four compartments: Rumen, Reticulum, Omasum, and Abomasum. This allows for complex fermentation of plant fibers.",
+            url: "https://en.wikipedia.org/wiki/Ruminant" 
         };
     }
 
-    // 2. MATH LAYER
-    const math = val.match(/(\d+)\s*([x\*\+\-\/])\s*(\d+)/);
-    if (math) {
-        const n1=parseInt(math[1]), op=math[2], n2=parseInt(math[3]);
-        let r = (op==='x'||op==='*')?n1*n2 : (op==='+')?n1+n2 : (op==='-')?n1-n2 : n1/n2;
-        return { text: `RESULT: ${r}` };
-    }
-
-    // 3. WIKIPEDIA RESEARCH
-    const status = document.createElement("div");
-    status.textContent = "AZUL: ANALYZING DATABASE...";
-    output.appendChild(status);
     const data = await searchWiki(val);
-    status.remove();
-
     if (data && data.extract) {
-        let coords = data.coordinates ? `${data.coordinates.lat.toFixed(4)}, ${data.coordinates.lon.toFixed(4)}` : null;
-        return { text: data.extract, url: data.content_urls?.desktop.page, geo: coords };
+        return { text: data.extract, url: data.content_urls?.desktop.page };
     }
-    return { text: "AZUL: Record not found. Please refine search parameters." };
+    return { text: "No record found. Refine query parameters." };
 }
 
 input.addEventListener('keydown', async (e) => {
@@ -185,32 +153,14 @@ input.addEventListener('keydown', async (e) => {
         const val = input.value;
         if (!val) return;
         input.value = "";
-        const userLine = document.createElement("div");
-        userLine.style.color = "white";
-        userLine.textContent = `> RESEARCH_INPUT: ${val}`;
-        output.appendChild(userLine);
         
-     // Cow stomach visual trigger
-if (val.toLowerCase().includes("cow") && val.toLowerCase().includes("stomach")) {
-    const imgContainer = document.createElement("div");
-    imgContainer.className = "diagram-note";
-    imgContainer.innerHTML = "AZUL: BIOLOGICAL DIAGRAM LOADED - RUMINANT SYSTEM";
-    
-    // This creates the actual image on the screen
-    const diagramImg = document.createElement("img");
-    diagramImg.src = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ruminant_system.svg/800px-Ruminant_system.svg.png";
-    diagramImg.style.width = "100%"; 
-    diagramImg.style.marginTop = "10px";
-    diagramImg.style.border = "1px solid var(--terminal-green)";
-    
-    imgContainer.appendChild(diagramImg);
-    output.appendChild(imgContainer);
-}
-
-
+        const line = document.createElement("div");
+        line.style.color = "white";
+        line.textContent = `> ${val}`;
+        output.appendChild(line);
+        
         const res = await handleQuery(val);
-        sessionNotes += `[LOG] ${val}\n`;
-        await typeText(`AZUL: ${res.text}`, res.url, res.geo);
+        await typeText(`AZUL: ${res.text}`, res.url);
     }
 });
 
@@ -219,8 +169,7 @@ function showTrivia() {
     typeText(`OMNI-FACT: ${fact}`);
 }
 
-window.onload = () => typeText("OMNI-AZUL RESEARCH TERMINAL v1.0: ONLINE.");
+window.onload = () => typeText("OMNI-AZUL v1.0 ONLINE. READY.");
 </script>
-
 </body>
 </html>
