@@ -101,17 +101,17 @@
 <script>
 const output = document.getElementById('output');
 const input = document.getElementById('userInput');
-const azulSprite = document.getElementById('azulSprite'); // Link to the sprite
+const azulSprite = document.getElementById('azulSprite'); // This MUST match your HTML ID
 let lastResult = null;
 
 const triviaFacts = [
     "QUANTUM: Atoms are 99.9999% empty space.",
     "ANATOMY: Your blood vessels could circle the Earth 4 times.",
     "SPACE: One day on Venus is longer than its entire year.",
-    "PHYSICS: Light takes 8m 20s to travel from the Sun to Earth.",
     "BIOLOGY: An octopus has three hearts and blue blood."
 ];
 
+// Toggle function for the Amber button
 function toggleAmber() {
     const root = document.documentElement;
     const isAmber = root.style.getPropertyValue('--terminal-green') === '#ffb000';
@@ -124,15 +124,18 @@ function toggleAmber() {
     }
 }
 
-async function typeText(text, url = null) {
-    // START TALKING
-    azulSprite.src = "talking_azul.png"; 
+async function typeText(text, url = null, geo = null) {
+    // TRIGGER TALKING SPRITE
+    azulSprite.src = "talking_azul.png";
     
     let messageSpan = document.createElement("div"); 
     messageSpan.style.marginBottom = "15px";
     output.appendChild(messageSpan);
     
-    for (let char of text) {
+    // Add Coordinates to the text if they exist
+    let fullText = geo ? `${text}\n\nCOORDINATES: ${geo}` : text;
+    
+    for (let char of fullText) {
         messageSpan.textContent += char; 
         output.scrollTop = output.scrollHeight;
         await new Promise(r => setTimeout(r, 15));
@@ -148,25 +151,41 @@ async function typeText(text, url = null) {
         messageSpan.appendChild(linkAnchor);
     }
     
-    // BACK TO WAITING
+    // TRIGGER WAITING SPRITE
     azulSprite.src = "waiting_azul.png";
     output.scrollTop = output.scrollHeight;
 }
 
 async function searchWiki(query) {
-    // SEARCHING STATE
+    // TRIGGER SEARCHING SPRITE
     azulSprite.src = "searching_azul.png";
     try {
+        // We use the full query API here to get Coordinates (prop=coordinates)
         const sUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*&srlimit=1`;
         const sRes = await fetch(sUrl);
         const sData = await sRes.json();
         
         if (sData.query && sData.query.search.length > 0) {
             const title = sData.query.search[0].title;
-            const sumUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}?redirect=true`;
-            const res = await fetch(sumUrl);
-            const data = await res.json();
-            return { title: data.title, extract: data.extract, url: data.content_urls.desktop.page };
+            
+            // This second call gets the Summary AND the Coordinates
+            const detailUrl = `https://en.wikipedia.org/w/api.php?action=query&prop=extracts|coordinates|info&exintro&explaintext&titles=${encodeURIComponent(title)}&inprop=url&format=json&origin=*`;
+            const dRes = await fetch(detailUrl);
+            const dData = await dRes.json();
+            const pageId = Object.keys(dData.query.pages)[0];
+            const page = dData.query.pages[pageId];
+
+            let coords = null;
+            if (page.coordinates) {
+                coords = `${page.coordinates[0].lat.toFixed(4)}°N, ${page.coordinates[0].lon.toFixed(4)}°E`;
+            }
+
+            return { 
+                title: page.title, 
+                extract: page.extract, 
+                url: page.fullurl,
+                geo: coords
+            };
         }
     } catch (e) { return null; }
     return null;
@@ -175,24 +194,23 @@ async function searchWiki(query) {
 async function handleQuery(q) {
     let val = q.toLowerCase().trim();
     
-    // THINKING STATE for Authority Overrides
-    if (val.includes("cite") || val.includes("nasa") || val.includes("purdue")) {
+    // TRIGGER THINKING SPRITE for Cite/NASA
+    if (val.includes("cite") || val.includes("citation") || val.includes("nasa")) {
         azulSprite.src = "thinking_azul.png";
     }
 
     if (val.includes("cite") || val.includes("citation") || val.includes("mla")) {
         if ((val === "cite" || val === "cite this") && lastResult) {
             const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-            return { text: `MLA CITATION:\n"${lastResult.title}." Wikipedia, ${date}, ${lastResult.url}.`, url: lastResult.url };
+            return { text: `MLA CITATION:\n"${lastResult.title}." Wikipedia, ${date}, ${lastResult.url}.` };
         }
         return { text: "CITATION PROTOCOL: Use Purdue OWL for gold-standard MLA/APA guides.", url: "https://owl.purdue.edu/owl/research_and_citation/resources.html" };
     }
 
-    // GENERAL SEARCH
     const data = await searchWiki(val);
     if (data) {
         lastResult = { title: data.title, url: data.url };
-        return { text: data.extract, url: data.url };
+        return { text: data.extract, url: data.url, geo: data.geo };
     }
     return { text: "No academic record found. Refine query parameters." };
 }
@@ -215,7 +233,7 @@ input.addEventListener('keydown', async (e) => {
         const res = await handleQuery(val);
         
         output.removeChild(loadingLine);
-        await typeText(`AZUL: ${res.text}`, res.url);
+        await typeText(`AZUL: ${res.text}`, res.url, res.geo);
     }
 });
 
@@ -224,8 +242,9 @@ function showTrivia() {
     typeText(`OMNI-FACT: ${fact}`);
 }
 
-window.onload = () => typeText("OMNI-AZUL v1.1 ONLINE. CARD CATALOG LOADED.");
+window.onload = () => typeText("OMNI-AZUL v1.2 ONLINE. CARD CATALOG LOADED.");
 </script>
+
 
 
 
