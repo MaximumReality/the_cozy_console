@@ -8,25 +8,25 @@
   :root { --terminal-green: #00ff41; --glow-color: rgba(0, 255, 65, 0.6); }
   body, html { margin: 0; padding: 0; height: 100%; background: #050505; font-family: 'Courier New', monospace; color: var(--terminal-green); overflow: hidden; }
   
-  /* Instruction Overlay */
+  /* Overlay & UI */
   #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
   #guide { background: #111; border: 2px solid var(--terminal-green); padding: 25px; max-width: 400px; position: relative; box-shadow: 0 0 20px var(--glow-color); }
-  #closeGuide { position: absolute; top: 5px; right: 10px; cursor: pointer; font-weight: bold; font-size: 1.5rem; }
+  #closeGuide { position: absolute; top: 5px; right: 10px; cursor: pointer; font-size: 1.5rem; }
 
-  /* UI Elements */
   #terminal { position: relative; width: 100%; height: 100dvh; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; }
   #output { flex-grow: 1; white-space: pre-wrap; line-height: 1.5em; overflow-y: auto; margin-bottom: 90px; text-shadow: 0 0 5px var(--glow-color); }
   #inputBar { position: fixed; bottom: 20px; left: 20px; width: calc(100% - 150px); display: flex; background: rgba(0,0,0,0.9); border-top: 1px solid var(--terminal-green); padding-top: 10px; z-index: 10; }
   #userInput { flex-grow: 1; background: transparent; border: none; color: var(--terminal-green); font-family: inherit; font-size: 1rem; outline: none; }
   
+  .btn-ui { position: fixed; top: 10px; background: var(--terminal-green); color: black; border: none; padding: 5px 10px; font-weight: bold; cursor: pointer; z-index: 1001; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+  #homeBtn { left: 10px; font-size: 1.2rem; background: transparent; color: var(--terminal-green); border: 1px solid var(--terminal-green); border-radius: 5px; }
+  #triviaBtn { right: 70px; }
+  #logBtn { right: 10px; }
+  
   #azulContainer { position: fixed; bottom: 20px; right: 20px; width: 110px; z-index: 20; pointer-events: none; }
   #azulSprite { width: 100%; filter: drop-shadow(0 0 10px var(--glow-color)); }
   .bobbing { animation: bob 3s ease-in-out infinite; }
   @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-
-  .btn-ui { position: fixed; top: 10px; background: var(--terminal-green); color: black; border: none; padding: 5px 10px; font-weight: bold; cursor: pointer; z-index: 1001; }
-  #logBtn { right: 10px; }
-  #triviaBtn { right: 70px; }
   a { color: #fff; text-decoration: underline; }
 </style>
 </head>
@@ -35,15 +35,15 @@
 <div id="overlay">
   <div id="guide">
     <div id="closeGuide" onclick="document.getElementById('overlay').style.display='none'">×</div>
-    <h2 style="margin-top:0">WELCOME TO AZUL</h2>
-    <p><strong>RESEARCH:</strong> Type any topic for a Wikipedia summary.</p>
-    <p><strong>MATH:</strong> Type "9x4" or "20+5" for instant results.</p>
-    <p><strong>CITATIONS:</strong> Type "cite" for APA/MLA help.</p>
-    <p><strong>TRIVIA:</strong> Use the top button for random facts!</p>
-    <button class="btn-ui" style="position:static; width:100%" onclick="document.getElementById('overlay').style.display='none'">INITIALIZE SYSTEM</button>
+    <h2 style="margin-top:0">AZUL INITIALIZED</h2>
+    <p><strong>GEO-LOCATE:</strong> Search cities for coordinates.</p>
+    <p><strong>ACADEMIC:</strong> Get Wikipedia-sourced summaries.</p>
+    <p><strong>LOG:</strong> Review your session history anytime.</p>
+    <button class="btn-ui" style="position:static; width:100%; margin-top:10px;" onclick="document.getElementById('overlay').style.display='none'">START SESSION</button>
   </div>
 </div>
 
+<a href="https://maximumreality.xyz" class="btn-ui" id="homeBtn">🏡</a>
 <button class="btn-ui" id="triviaBtn" onclick="showTrivia()">FACT</button>
 <button class="btn-ui" id="logBtn" onclick="alert(sessionNotes || 'No notes yet!')">LOG</button>
 
@@ -70,8 +70,9 @@ const triviaFacts = [
     "HISTORY: The word 'Salary' comes from the Roman word for 'Salt'."
 ];
 
-async function typeText(text, url = null) {
-    for (let char of text) {
+async function typeText(text, url = null, geo = null) {
+    let displayText = geo ? `${text}\nCOORDINATES: ${geo}` : text;
+    for (let char of displayText) {
         output.textContent += char;
         output.scrollTop = output.scrollHeight;
         await new Promise(r => setTimeout(r, 15));
@@ -106,26 +107,25 @@ async function searchWiki(query) {
 async function handleQuery(q) {
     let val = q.toLowerCase().trim();
     
-    // Calculator
     const math = val.match(/(\d+)\s*([x\*\+\-\/])\s*(\d+)/);
     if (math) {
         const n1=parseInt(math[1]), op=math[2], n2=parseInt(math[3]);
         let r = (op==='x'||op==='*')?n1*n2 : (op==='+')?n1+n2 : (op==='-')?n1-n2 : n1/n2;
-        return { text: `CALCULATION: ${n1} ${op} ${n2} = ${r}` };
+        return { text: `CALC: ${n1} ${op} ${n2} = ${r}` };
     }
 
-    // Overrides
-    if (val.includes("first president") || val.includes("1st president")) return { text: "George Washington was the 1st US President (1789-1797).", url: "https://en.wikipedia.org/wiki/George_Washington" };
     if (val.includes("cite")) return { text: "CITE GUIDE: MLA (Author Page). APA (Author, Year). Use Purdue OWL.", url: "https://owl.purdue.edu/owl/research_and_citation/resources.html" };
 
-    // Search
-    output.textContent += "SEARCHING GLOBAL ARCHIVES...\n";
-    let clean = val.replace(/how to|what is|where is|tell me about/g, "").trim();
-    const data = await searchWiki(clean || val);
+    output.textContent += "CONSULTING ARCHIVES...\n";
+    const data = await searchWiki(val);
     if (data && data.extract) {
-        return { text: data.extract, url: data.content_urls?.desktop.page };
+        let coords = null;
+        if (data.coordinates) {
+            coords = `${data.coordinates.lat.toFixed(4)}, ${data.coordinates.lon.toFixed(4)}`;
+        }
+        return { text: data.extract, url: data.content_urls?.desktop.page, geo: coords };
     }
-    return { text: "No direct match found. Try a specific academic keyword." };
+    return { text: "No direct match found. Try a specific keyword." };
 }
 
 input.addEventListener('keydown', async (e) => {
@@ -135,8 +135,8 @@ input.addEventListener('keydown', async (e) => {
         input.value = "";
         output.textContent += `> ${val}\n`;
         const res = await handleQuery(val);
-        sessionNotes += `• ${val}: ${res.text.substring(0,40)}...\n`;
-        await typeText(`AZUL: ${res.text}`, res.url);
+        sessionNotes += `• ${val}: ${res.text.substring(0,35)}...\n`;
+        await typeText(`AZUL: ${res.text}`, res.url, res.geo);
     }
 });
 
