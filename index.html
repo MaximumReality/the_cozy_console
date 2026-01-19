@@ -95,7 +95,8 @@ const triviaFacts = [
     "ANATOMY: Your blood vessels could circle the Earth 4 times.",
     "SPACE: One day on Venus is longer than its entire year.",
     "PHYSICS: Light takes 8m 20s to travel from the Sun to Earth.",
-    "ANATOMY: The human brain operates on about 20 watts of power."
+    "ANATOMY: The human brain operates on about 20 watts of power.",
+    "BIOLOGY: An octopus has three hearts and blue blood."
 ];
 
 async function typeText(text, url = null) {
@@ -123,12 +124,8 @@ async function typeText(text, url = null) {
 
 async function searchWiki(query) {
     try {
-        // We keep the question words but clean up the syntax
         let clean = query.trim();
-        
-        // We use 'generator' to get the most relevant page based on the full question
-        const sUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(clean)}&gsrlimit=1&prop=extracts|pageimages|info&exintro&explaintext&inprop=url&format=json&origin=*`;
-        
+        const sUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(clean)}&gsrlimit=1&prop=extracts|info&exintro&explaintext&inprop=url&format=json&origin=*`;
         const sRes = await fetch(sUrl);
         const sData = await sRes.json();
         
@@ -144,53 +141,55 @@ async function searchWiki(query) {
     return null;
 }
 
-
 async function handleQuery(q) {
     let val = q.toLowerCase().trim();
     
-    // 1. CITATION AUTHORITY (Purdue OWL)
-    if (val.includes("cite") || val.includes("citation") || val.includes("bibliography")) {
+    // 1. Core Biology Hard-Facts (Card Catalog Priority)
+    if (val.includes("cow") && val.includes("stomach")) {
         return { 
-            text: "CITATION PROTOCOL: For academic integrity, refer to the Purdue Online Writing Lab (OWL). It provides universal standards for MLA, APA, and Chicago styles.",
-            url: "https://owl.purdue.edu/owl/research_and_citation/resources.html" 
+            text: "Cows have one stomach with four specialized compartments: the Rumen, Reticulum, Omasum, and Abomasum. This ruminant system allows them to digest tough plant cellulose.",
+            url: "https://en.wikipedia.org/wiki/Ruminant" 
         };
     }
-
-    // 2. SPACE AUTHORITY (NASA)
-    if (val.includes("nasa") || val.includes("space station") || val.includes("mars") || val.includes("exoplanet")) {
-        // We still fetch the wiki summary, but we'll point the source to NASA's data portal
-        const data = await searchWiki(val);
+    if (val.includes("octopus") && val.includes("heart")) {
         return {
-            text: data ? data.text : "Accessing NASA Digital Archives for space-related telemetry and research.",
-            url: "https://www.nasa.gov/news-release/"
+            text: "An octopus has three hearts: one systemic heart that circulates blood around the body and two branchial hearts that pump it through each of the two gills.",
+            url: "https://en.wikipedia.org/wiki/Octopus#Anatomy_and_physiology"
         };
     }
 
-    // 3. THE CARD CATALOG (General Wiki Search)
-    const data = await searchWiki(val);
-    if (data && data.text) {
-        return { text: data.text, url: data.url };
-    }
-    
-    return { text: "No academic record found in the local catalog. Please refine your search terms." };
-}
-
-
-    // Math
-    const math = val.match(/(\d+)\s*([x\*\+\-\/])\s*(\d+)/);
-    if (math) {
-        const n1=parseInt(math[1]), op=math[2], n2=parseInt(math[3]);
+    // 2. Math Layer
+    const mathMatch = val.match(/(\d+)\s*([x\*\+\-\/])\s*(\d+)/);
+    if (mathMatch) {
+        const n1=parseInt(mathMatch[1]), op=mathMatch[2], n2=parseInt(mathMatch[3]);
         let r = (op==='x'||op==='*')?n1*n2 : (op==='+')?n1+n2 : (op==='-')?n1-n2 : n1/n2;
         return { text: `CALCULATION RESULT: ${r}` };
     }
 
-    if (val.includes("cite")) return { text: "CITATIONS: Use MLA (Author. 'Title.' Container, Year) or APA (Author, Year). Link provided for guide.", url: "https://owl.purdue.edu/owl/research_and_citation/resources.html" };
+    // 3. Citation Authority
+    if (val.includes("cite") || val.includes("citation") || val.includes("mla") || val.includes("apa")) {
+        return { 
+            text: "CITATION PROTOCOL: Refer to the Purdue Online Writing Lab (OWL) for universal standards for MLA, APA, and Chicago styles.",
+            url: "https://owl.purdue.edu/owl/research_and_citation/resources.html" 
+        };
+    }
 
+    // 4. Space/NASA Authority
+    if (val.includes("nasa") || val.includes("space station") || val.includes("mars")) {
+        const data = await searchWiki(val);
+        return {
+            text: data ? data.extract : "Accessing NASA Digital Archives...",
+            url: "https://www.nasa.gov"
+        };
+    }
+
+    // 5. General Search
     const data = await searchWiki(val);
     if (data && data.extract) {
-        return { text: data.extract, url: data.content_urls?.desktop.page };
+        return { text: data.extract, url: data.url };
     }
-    return { text: "No academic record found. Please refine search terms." };
+    
+    return { text: "No academic record found. Please refine search parameters." };
 }
 
 input.addEventListener('keydown', async (e) => {
@@ -214,7 +213,8 @@ function showTrivia() {
     typeText(`OMNI-FACT: ${fact}`);
 }
 
-window.onload = () => typeText("OMNI-AZUL v1.1 ONLINE. READY FOR RESEARCH.");
+window.onload = () => typeText("OMNI-AZUL v1.1 ONLINE. CARD CATALOG LOADED.");
 </script>
+
 </body>
 </html>
