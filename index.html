@@ -86,69 +86,53 @@ function setAzul(state) {
     else if (state === 'hover') { azul.src = 'hover-azul.png'; azulCont.style.transform = 'translateY(-30px)'; }
 }
 
-async function searchWikipedia(subject) {
-    const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(subject)}`;
+// --- Enhanced Wikipedia Search ---
+async function searchWikipedia(query) {
+    // First, try a direct summary (fastest)
+    const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
     try {
-        const response = await fetch(url);
-        if (!response.ok) return null;
-        const data = await response.json();
-        return data;
+        const response = await fetch(summaryUrl);
+        if (response.ok) return await response.json();
+
+        // If direct fails, try a "Search" to find the best title
+        const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`;
+        const searchRes = await fetch(searchUrl);
+        const searchData = await searchRes.json();
+
+        if (searchData.query.search.length > 0) {
+            // Get the title of the #1 search result
+            const bestTitle = searchData.query.search[0].title;
+            const retryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(bestTitle)}`;
+            const retryRes = await fetch(retryUrl);
+            return await retryRes.json();
+        }
     } catch (e) { return null; }
+    return null;
 }
 
 async function getAnswer(query) {
     let q = query.toLowerCase().trim();
 
-    // --- 1. EMERGENCY PROTOCOL: CPR ---
-    if (q.includes("cpr")) {
-        return { 
-            text: "EMERGENCY PROTOCOL: 1. Check the scene. 2. Call 911. 3. Push hard and fast in the center of the chest (100-120 bpm). 4. Deliver rescue breaths if trained. Continue until help arrives.",
-            url: "https://en.wikipedia.org/wiki/Cardiopulmonary_resuscitation" 
-        };
-    }
-
-    // --- 2. ACADEMIC PROTOCOL: CITATIONS ---
-    if (q.includes("cite") || q.includes("citation") || q.includes("bibliography")) {
-        return { 
-            text: "CITATION GUIDE: For APA, use (Author, Year). For MLA, use (Author Page). Always include a full reference list at the end of your paper to avoid plagiarism.",
-            url: "https://en.wikipedia.org/wiki/Citation" 
-        };
-    }
-
-    // --- 3. MATH SOLVER ---
-    if (q.includes("=")) {
-        const plusMatch = q.match(/x\s*\+\s*(\d+)\s*=\s*(\d+)/);
-        if (plusMatch) {
-            const a = parseInt(plusMatch[1]); const b = parseInt(plusMatch[2]);
-            return { text: `ALGEBRA: Subtract ${a} from both sides. x = ${b - a}.` };
-        }
-        const multMatch = q.match(/(\d+)x\s*=\s*(\d+)/);
-        if (multMatch) {
-            const a = parseInt(multMatch[1]); const b = parseInt(multMatch[2]);
-            return { text: `ALGEBRA: Divide both sides by ${a}. x = ${b / a}.` };
-        }
-    }
-
+    // 1. Keep the high-priority "Hardcoded" triggers (Safety & Math)
+    if (q.includes("cpr")) return { text: "EMERGENCY: Push hard/fast in center of chest (100-120bpm). Call 911.", url: "https://en.wikipedia.org/wiki/Cardiopulmonary_resuscitation" };
     if (q === "clear") { output.textContent = ""; return { text: "Terminal wiped." }; }
-
-    // --- 4. IMPROVED RESEARCH SEARCH ---
-    // If it's a long question, we try to find the last word or the most unique word
-    let words = q.split(" ");
-    let subject = words[words.length - 1]; // Try the last word (e.g., "Photosynthesis")
     
-    if (q.includes("about")) subject = q.split("about")[1].trim();
-
-    output.textContent += `ACCESSING ARCHIVES: ${subject.toUpperCase()}...\n`;
-    let data = await searchWikipedia(subject);
+    // 2. The Universal Search
+    output.textContent += `CONSULTING GLOBAL ARCHIVES...\n`;
     
-    // If the specific subject fails, try the whole query as a backup
-    if (!data) data = await searchWikipedia(q);
+    // We clean only the very basic "question starters"
+    let cleanQuery = q.replace(/how to|what is|tell me about|search for/g, "").trim();
+    
+    const data = await searchWikipedia(cleanQuery);
     
     if (data && data.extract) {
-        return { text: `WIKIPEDIA: ${data.extract}`, url: data.content_urls.desktop.page };
+        return { 
+            text: `WIKIPEDIA: ${data.extract}`, 
+            url: data.content_urls ? data.content_urls.desktop.page : `https://en.wikipedia.org/wiki/${data.title}`
+        };
     }
 
-    return { text: "I'm having trouble finding that. Try a simpler topic like 'Biology', 'Rome', or 'Calculus'." };
+    return { text: "Search failed. Try using a simpler keyword like 'Physics' or 'Rome'." };
 }
 
 input.addEventListener('keydown', async (e) => {
