@@ -12,6 +12,18 @@
     :root { --terminal-green: #00ff41; --glow-color: rgba(0, 255, 65, 0.6); --header-bg: #111; }
     body, html { margin: 0; padding: 0; height: 100%; background: #050505; font-family: 'Courier New', monospace; color: var(--terminal-green); overflow: hidden; }
 
+    /* The Flipping Hourglass Animation */
+    .loading-hourglass {
+        display: inline-block;
+        animation: flip 1.5s infinite;
+        margin-left: 10px;
+    }
+    @keyframes flip {
+        0% { transform: rotate(0deg); }
+        50% { transform: rotate(180deg); }
+        100% { transform: rotate(180deg); }
+    }
+
     /* Print Formatting */
     @media print {
       #toolbar, #inputBar, #azulContainer, .btn-ui, #overlay { display: none !important; }
@@ -60,10 +72,9 @@
 <div id="overlay">
   <div id="guide">
     <h2 style="margin-top:0; color:white;">OMNI-AZUL v1.1</h2>
-    <p>• <strong>SEARCH:</strong> Type any topic for an academic summary.</p>
-    <p>• <strong>MATH:</strong> Simple equations (e.g., 5 * 25).</p>
-    <p>• <strong>CITATION:</strong> Type 'cite' for formatting help.</p>
-    <p>• <strong>PRINT:</strong> Use the icon to save your research.</p>
+    <p>• <strong>SEARCH:</strong> Any topic for an academic summary.</p>
+    <p>• <strong>CITE:</strong> Type 'cite' after a search for MLA.</p>
+    <p>• <strong>PRINT:</strong> 🖨️ icon saves your session.</p>
     <button class="btn-ui" style="width:100%; padding:10px;" onclick="document.getElementById('overlay').style.display='none'">BOOT SYSTEM</button>
   </div>
 </div>
@@ -89,7 +100,7 @@
 <script>
 const output = document.getElementById('output');
 const input = document.getElementById('userInput');
-let lastResult = null; // Memory for the 'cite' command
+let lastResult = null;
 
 const triviaFacts = [
     "QUANTUM: Atoms are 99.9999% empty space.",
@@ -124,26 +135,16 @@ async function typeText(text, url = null) {
 
 async function searchWiki(query) {
     try {
-        // We switch to 'list=search' with 'srsearch' to find specific phrases within articles
         const sUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*&srlimit=1`;
         const sRes = await fetch(sUrl);
         const sData = await sRes.json();
         
         if (sData.query && sData.query.search.length > 0) {
             const title = sData.query.search[0].title;
-            const pageId = sData.query.search[0].pageid;
-            
-            // Now we fetch the summary, but we ask for MORE sentences (exsentences=5)
-            // to ensure the specific answer is included.
             const sumUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}?redirect=true`;
             const res = await fetch(sumUrl);
             const data = await res.json();
-            
-            return {
-                title: data.title,
-                extract: data.extract,
-                url: data.content_urls.desktop.page
-            };
+            return { title: data.title, extract: data.extract, url: data.content_urls.desktop.page };
         }
     } catch (e) { return null; }
     return null;
@@ -152,46 +153,29 @@ async function searchWiki(query) {
 async function handleQuery(q) {
     let val = q.toLowerCase().trim();
     
-    // 1. CITATION GENERATOR
-    if (val === "cite" || val === "cite this" || val === "citation") {
-        if (!lastResult) return { text: "Azul: No active record in memory. Please search for a topic first." };
+    if (val === "cite" || val === "citation") {
+        if (!lastResult) return { text: "No record in memory to cite." };
         const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         const mla = `"${lastResult.title}." Wikipedia, Wikimedia Foundation, ${date}, ${lastResult.url}.`;
-        return { text: `MLA CITATION GENERATED:\n${mla}` };
+        return { text: `MLA CITATION:\n${mla}` };
     }
 
-    // 2. CORE BIOLOGY ROUTING
+    // Special Animal Facts
     if (val.includes("cow") && val.includes("stomach")) {
         lastResult = { title: "Ruminant", url: "https://en.wikipedia.org/wiki/Ruminant" };
-        return { 
-            text: "Cows have one stomach with four specialized compartments: the Rumen, Reticulum, Omasum, and Abomasum.",
-            url: lastResult.url 
-        };
+        return { text: "Cows have one stomach with four compartments: the Rumen, Reticulum, Omasum, and Abomasum.", url: lastResult.url };
     }
-    if (val.includes("octopus") && val.includes("heart")) {
-        lastResult = { title: "Octopus", url: "https://en.wikipedia.org/wiki/Octopus" };
-        return {
-            text: "An octopus has three hearts: one systemic heart and two branchial hearts.",
-            url: lastResult.url
-        };
+    if (val.includes("jellyfish") && val.includes("brain")) {
+        lastResult = { title: "Jellyfish", url: "https://en.wikipedia.org/wiki/Jellyfish" };
+        return { text: "Jellyfish do not have a brain. They use a decentralized nerve net to sense their environment.", url: lastResult.url };
     }
 
-    // 3. MATH
-    const mathMatch = val.match(/(\d+)\s*([x\*\+\-\/])\s*(\d+)/);
-    if (mathMatch) {
-        const n1=parseInt(mathMatch[1]), op=mathMatch[2], n2=parseInt(mathMatch[3]);
-        let r = (op==='x'||op==='*')?n1*n2 : (op==='+')?n1+n2 : (op==='-')?n1-n2 : n1/n2;
-        return { text: `CALCULATION RESULT: ${r}` };
-    }
-
-    // 4. GENERAL SEARCH
     const data = await searchWiki(val);
-    if (data && data.extract) {
+    if (data) {
         lastResult = { title: data.title, url: data.url };
         return { text: data.extract, url: data.url };
     }
-    
-    return { text: "No academic record found. Please refine search parameters." };
+    return { text: "No academic record found. Refine query parameters." };
 }
 
 input.addEventListener('keydown', async (e) => {
@@ -200,26 +184,22 @@ input.addEventListener('keydown', async (e) => {
         if (!val) return;
         input.value = "";
         
-        // 1. Show the user's input
         const line = document.createElement("div");
         line.style.color = "white";
         line.textContent = `> ${val}`;
         output.appendChild(line);
         
-        // 2. Create the "Processing" line with the 80s hourglass
+        // Show Rotating Hourglass
         const loadingLine = document.createElement("div");
-        loadingLine.innerHTML = "AZUL: SEARCHING ARCHIVES... ⏳";
+        loadingLine.innerHTML = `AZUL: SEARCHING ARCHIVES... <span class="loading-hourglass">⌛</span>`;
         output.appendChild(loadingLine);
         
-        // 3. Fetch the data
         const res = await handleQuery(val);
         
-        // 4. Remove the "Searching" line and type the real answer
         output.removeChild(loadingLine);
         await typeText(`AZUL: ${res.text}`, res.url);
     }
 });
-
 
 function showTrivia() {
     const fact = triviaFacts[Math.floor(Math.random() * triviaFacts.length)];
@@ -228,6 +208,5 @@ function showTrivia() {
 
 window.onload = () => typeText("OMNI-AZUL v1.1 ONLINE. CARD CATALOG LOADED.");
 </script>
-
 </body>
 </html>
