@@ -90,51 +90,55 @@ function setAzul(state) {
 async function getAnswer(query) {
     let q = query.toLowerCase().trim();
 
-    // --- 1. ACADEMIC STUDY GUIDES (Overrides Wikipedia) ---
-    if (q.includes("cite") || q.includes("citation") || q.includes("bibliography") || q.includes("mla") || q.includes("apa")) {
+    // --- 1. PRIORITY ACADEMIC TRIGGERS ---
+    // If 'cite' or 'source' is in the query, bypass Wikipedia entirely
+    if (q.includes("cite") || q.includes("source") || q.includes("citation") || q.includes("bibliography")) {
         return { 
-            text: "CITING SOURCES: \n• MLA: (Author Page Number) - Used for Humanities.\n• APA: (Author, Year) - Used for Sciences.\n• Chicago: Footnotes - Used for History.\nAlways keep a list of your links and authors as you go!",
+            text: "ACADEMIC GUIDE: To cite sources properly, use a standard format:\n\n" +
+                  "• MLA (English/Arts): Author. 'Title.' Container, Year.\n" +
+                  "• APA (Science/Psych): Author. (Year). Title. Source.\n\n" +
+                  "Would you like me to explain a specific style like MLA or APA?",
             url: "https://owl.purdue.edu/owl/research_and_citation/resources.html" 
         };
     }
 
+    // --- 2. EMERGENCY & MATH ---
     if (q.includes("cpr")) {
         return { 
-            text: "EMERGENCY CPR: 1. Call 911. 2. Push hard and fast in the center of the chest. 3. Use a beat like 'Stayin' Alive' (100-120 bpm).",
+            text: "EMERGENCY: 1. Call 911. 2. Push hard and fast in center of chest. 3. Use 'Stayin' Alive' beat (100 bpm).",
             url: "https://en.wikipedia.org/wiki/Cardiopulmonary_resuscitation" 
         };
     }
 
-    // --- 2. MATH SOLVER ---
     if (q.includes("=")) {
-        const plusMatch = q.match(/x\s*\+\s*(\d+)\s*=\s*(\d+)/);
-        if (plusMatch) {
-            const a = parseInt(plusMatch[1]); const b = parseInt(plusMatch[2]);
-            return { text: `ALGEBRA: Subtract ${a} from both sides. x = ${b - a}.` };
+        const math = q.match(/x\s*([\+\-\*\/])\s*(\d+)\s*=\s*(\d+)/);
+        if (math) {
+            const op = math[1]; const a = parseInt(math[2]); const b = parseInt(math[3]);
+            if (op === "+") return { text: `ALGEBRA: Subtract ${a} from both sides. x = ${b - a}.` };
+            if (op === "-") return { text: `ALGEBRA: Add ${a} to both sides. x = ${b + a}.` };
         }
     }
 
     if (q === "clear") { output.textContent = ""; return { text: "Terminal wiped." }; }
 
-    // --- 3. THE IMPROVED WIKIPEDIA SEARCH ---
+    // --- 3. THE "ALL-KNOWING" WIKIPEDIA SEARCH ---
     output.textContent += `CONSULTING ARCHIVES...\n`;
     
-    // Clean up the search term so it doesn't get confused by "how to"
-    let cleanQuery = q.replace(/how to|what is|tell me about|search for|properly/g, "").trim();
+    // Clean up the search term
+    let cleanQuery = q.replace(/how to|what is|tell me about|search for|properly|can i/g, "").trim();
     
     const data = await searchWikipedia(cleanQuery);
     
     if (data && data.extract) {
-        // We filter out scary words for a more 'cozy' study partner feel
-        let cleanText = data.extract.replace(/jail|prison|criminal|prosecution/gi, "academic consequences");
         return { 
-            text: `WIKIPEDIA: ${cleanText}`, 
+            text: `WIKIPEDIA: ${data.extract}`, 
             url: data.content_urls ? data.content_urls.desktop.page : `https://en.wikipedia.org/wiki/${data.title}`
         };
     }
 
-    return { text: "I couldn't find a direct file. Try a simpler topic like 'Biology' or 'Physics'." };
+    return { text: "I couldn't find a direct file. Try a simpler topic name like 'Chemistry' or 'The Moon'." };
 }
+
 
 
 input.addEventListener('keydown', async (e) => {
