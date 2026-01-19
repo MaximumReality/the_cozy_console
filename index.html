@@ -74,7 +74,7 @@
     <h2 style="margin-top:0; color:white;">OMNI-AZUL v1.1</h2>
     <p>• <strong>SEARCH:</strong> Any topic for an academic summary.</p>
     <p>• <strong>CITE:</strong> Type 'cite' after a search for MLA.</p>
-    <p>• <strong>PRINT:</strong> 🖨️ icon saves your session.</p>
+    <p>• <strong>AMBER:</strong> Switch to eye-friendly amber mode.</p>
     <button class="btn-ui" style="width:100%; padding:10px;" onclick="document.getElementById('overlay').style.display='none'">BOOT SYSTEM</button>
   </div>
 </div>
@@ -82,6 +82,7 @@
 <div id="toolbar">
   <a href="https://maximumreality.xyz" class="btn-ui" id="homeBtn">🏡</a>
   <div class="toolbar-group">
+    <button class="btn-ui" onclick="toggleAmber()">AMBER</button>
     <button class="btn-ui" onclick="output.textContent=''; typeText('TERMINAL PURGED...')">🗑️</button>
     <button class="btn-ui" onclick="showTrivia()">FACT</button>
     <button class="btn-ui" onclick="window.print()">🖨️</button>
@@ -109,6 +110,18 @@ const triviaFacts = [
     "PHYSICS: Light takes 8m 20s to travel from the Sun to Earth.",
     "BIOLOGY: An octopus has three hearts and blue blood."
 ];
+
+function toggleAmber() {
+    const root = document.documentElement;
+    const isAmber = root.style.getPropertyValue('--terminal-green') === '#ffb000';
+    if (isAmber) {
+        root.style.setProperty('--terminal-green', '#00ff41');
+        root.style.setProperty('--glow-color', 'rgba(0, 255, 65, 0.6)');
+    } else {
+        root.style.setProperty('--terminal-green', '#ffb000'); 
+        root.style.setProperty('--glow-color', 'rgba(255, 176, 0, 0.6)');
+    }
+}
 
 async function typeText(text, url = null) {
     let messageSpan = document.createElement("div"); 
@@ -160,14 +173,13 @@ async function handleQuery(q) {
         return { text: `MLA CITATION:\n${mla}` };
     }
 
-    // Special Animal Facts
     if (val.includes("cow") && val.includes("stomach")) {
         lastResult = { title: "Ruminant", url: "https://en.wikipedia.org/wiki/Ruminant" };
         return { text: "Cows have one stomach with four compartments: the Rumen, Reticulum, Omasum, and Abomasum.", url: lastResult.url };
     }
-    if (val.includes("jellyfish") && val.includes("brain")) {
+    if (val.includes("jellyfish") && (val.includes("brain") || val.includes("nerve"))) {
         lastResult = { title: "Jellyfish", url: "https://en.wikipedia.org/wiki/Jellyfish" };
-        return { text: "Jellyfish do not have a brain. They use a decentralized nerve net to sense their environment.", url: lastResult.url };
+        return { text: "Jellyfish do not have a brain. They utilize a decentralized 'nerve net' to sense light, touch, and temperature.", url: lastResult.url };
     }
 
     const data = await searchWiki(val);
@@ -189,7 +201,6 @@ input.addEventListener('keydown', async (e) => {
         line.textContent = `> ${val}`;
         output.appendChild(line);
         
-        // Show Rotating Hourglass
         const loadingLine = document.createElement("div");
         loadingLine.innerHTML = `AZUL: SEARCHING ARCHIVES... <span class="loading-hourglass">⌛</span>`;
         output.appendChild(loadingLine);
