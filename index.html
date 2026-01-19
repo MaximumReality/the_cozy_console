@@ -5,23 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Azul: Study Partner Pro</title>
 <style>
-  :root { --terminal-green: #00ff41; --glow-color: rgba(0, 255, 65, 0.6); }
+  :root { --terminal-green: #00ff41; --glow-color: rgba(0, 255, 65, 0.6); --header-bg: #1a1a1a; }
   body, html { margin: 0; padding: 0; height: 100%; background: #050505; font-family: 'Courier New', monospace; color: var(--terminal-green); overflow: hidden; }
   
-  /* Overlay & UI */
-  #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
-  #guide { background: #111; border: 2px solid var(--terminal-green); padding: 25px; max-width: 400px; position: relative; box-shadow: 0 0 20px var(--glow-color); }
-  #closeGuide { position: absolute; top: 5px; right: 10px; cursor: pointer; font-size: 1.5rem; }
+  /* Toolbar at the top */
+  #toolbar { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 50px; 
+    background: var(--header-bg); border-bottom: 1px solid var(--terminal-green); 
+    display: flex; align-items: center; justify-content: space-between; 
+    padding: 0 15px; box-sizing: border-box; z-index: 1500; 
+  }
+  .toolbar-group { display: flex; gap: 10px; }
 
-  #terminal { position: relative; width: 100%; height: 100dvh; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; }
+  /* Adjust Terminal to start below Toolbar */
+  #terminal { 
+    position: relative; width: 100%; height: calc(100dvh - 50px); 
+    margin-top: 50px; padding: 20px; box-sizing: border-box; 
+    display: flex; flex-direction: column; 
+  }
+  
   #output { flex-grow: 1; white-space: pre-wrap; line-height: 1.5em; overflow-y: auto; margin-bottom: 90px; text-shadow: 0 0 5px var(--glow-color); }
+  
+  /* Input Bar fixed at bottom */
   #inputBar { position: fixed; bottom: 20px; left: 20px; width: calc(100% - 150px); display: flex; background: rgba(0,0,0,0.9); border-top: 1px solid var(--terminal-green); padding-top: 10px; z-index: 10; }
   #userInput { flex-grow: 1; background: transparent; border: none; color: var(--terminal-green); font-family: inherit; font-size: 1rem; outline: none; }
   
-  .btn-ui { position: fixed; top: 10px; background: var(--terminal-green); color: black; border: none; padding: 5px 10px; font-weight: bold; cursor: pointer; z-index: 1001; text-decoration: none; display: flex; align-items: center; justify-content: center; }
-  #homeBtn { left: 10px; font-size: 1.2rem; background: transparent; color: var(--terminal-green); border: 1px solid var(--terminal-green); border-radius: 5px; }
-  #triviaBtn { right: 70px; }
-  #logBtn { right: 10px; }
+  /* Buttons */
+  .btn-ui { background: var(--terminal-green); color: black; border: none; padding: 5px 12px; font-weight: bold; cursor: pointer; text-decoration: none; border-radius: 3px; font-size: 0.8rem; }
+  #homeBtn { font-size: 1.1rem; padding: 2px 8px; }
+
+  /* Overlay */
+  #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+  #guide { background: #111; border: 2px solid var(--terminal-green); padding: 25px; max-width: 400px; position: relative; }
   
   #azulContainer { position: fixed; bottom: 20px; right: 20px; width: 110px; z-index: 20; pointer-events: none; }
   #azulSprite { width: 100%; filter: drop-shadow(0 0 10px var(--glow-color)); }
@@ -34,18 +49,21 @@
 
 <div id="overlay">
   <div id="guide">
-    <div id="closeGuide" onclick="document.getElementById('overlay').style.display='none'">×</div>
-    <h2 style="margin-top:0">AZUL INITIALIZED</h2>
-    <p><strong>GEO-LOCATE:</strong> Search cities for coordinates.</p>
-    <p><strong>ACADEMIC:</strong> Get Wikipedia-sourced summaries.</p>
-    <p><strong>LOG:</strong> Review your session history anytime.</p>
-    <button class="btn-ui" style="position:static; width:100%; margin-top:10px;" onclick="document.getElementById('overlay').style.display='none'">START SESSION</button>
+    <h2 style="margin-top:0">SYSTEM INITIALIZED</h2>
+    <p>• Use the <strong>Toolbar</strong> for quick actions.</p>
+    <p>• Search topics for <strong>Coordinates</strong> & Data.</p>
+    <p>• Type <strong>Math</strong> or <strong>Citations</strong> for help.</p>
+    <button class="btn-ui" style="width:100%; margin-top:10px;" onclick="document.getElementById('overlay').style.display='none'">START SESSION</button>
   </div>
 </div>
 
-<a href="https://maximumreality.xyz" class="btn-ui" id="homeBtn">🏡</a>
-<button class="btn-ui" id="triviaBtn" onclick="showTrivia()">FACT</button>
-<button class="btn-ui" id="logBtn" onclick="alert(sessionNotes || 'No notes yet!')">LOG</button>
+<div id="toolbar">
+  <a href="https://maximumreality.xyz" class="btn-ui" id="homeBtn">🏡</a>
+  <div class="toolbar-group">
+    <button class="btn-ui" onclick="showTrivia()">FACT</button>
+    <button class="btn-ui" onclick="alert(sessionNotes || 'No notes yet!')">LOG</button>
+  </div>
+</div>
 
 <div id="terminal">
   <div id="output"></div>
