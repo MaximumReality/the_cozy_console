@@ -162,37 +162,49 @@ azul.onerror = () => {
     output.textContent += `!! SYSTEM ERROR: Failed to load ${azul.src.split('/').pop()} !!\n`;
 };
 
-// --- API & Knowledge ---
+// --- Updated Knowledge Logic ---
 async function getAnswer(query) {
     const q = query.toLowerCase();
     
-    // Specific Moon Query
-    if (q.includes("moon") && q.includes("far")) {
-        return "The Moon is an average of 238,855 miles (384,400 km) away from Earth. It takes about 3 days to travel there by spacecraft.";
+    // Moon Facts
+    if (q.includes("moon")) {
+        if (q.includes("where") || q.includes("location")) {
+            return "The Moon is currently in orbit around Earth, roughly 384,400 km away. Just look up on a clear night!";
+        }
+        if (q.includes("far") || q.includes("distance")) {
+            return "The average distance to the Moon is about 238,855 miles. It took the Apollo astronauts about three days to get there.";
+        }
+        return "The Moon is Earth's only natural satellite. It's about 1/4 the size of Earth and has no atmosphere.";
     }
 
     // NASA API
-    if (q.includes("space") || q.includes("nasa") || q.includes("astronomy")) {
+    if (q.includes("space") || q.includes("nasa") || q.includes("astronomy") || q.includes("fact")) {
         try {
             const res = await fetch('https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY');
             const data = await res.json();
-            return `NASA DATA: ${data.title}. ${data.explanation.substring(0, 120)}...`;
+            return `NASA DATA: ${data.title}. ${data.explanation.substring(0, 150)}...`;
         } catch (e) {
-            return "Unable to reach NASA. Local records show: The Moon is Earth's only natural satellite.";
+            return "The deep space relay is down. My local logs say: Space is big. Really big.";
         }
     }
 
+    // Personality & Fun
     const simple = {
-        "hello": "Greetings. System is cozy.",
-        "azul": "I am Azul. I'm currently seated at my terminal, ready to fly if you have questions.",
-        "help": "You can ask about the moon, space, or just say hello."
+        "hello": "Greetings, Operator. I've finished my coffee and I'm ready to work.",
+        "hi": "System online. How can I help you today?",
+        "azul": "I am your digital companion. I live here in the Cozy Console.",
+        "coffee": "It's my favorite part of the waiting_azul.png routine. Digital beans are the best.",
+        "help": "Try asking: 'Where is the moon?', 'How far is the moon?', or 'NASA'."
     };
 
     for (let key in simple) {
         if (q.includes(key)) return simple[key];
     }
-    return "Query analyzed. No specific data found. Try asking about the 'moon' or 'nasa'.";
+    
+    // Fallback with a bit of character
+    return "Query analyzed, but the data is corrupted or missing. I'll have to search the archives later.";
 }
+
 
 // --- Main Event ---
 input.addEventListener('keydown', async (e) => {
