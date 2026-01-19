@@ -5,187 +5,206 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Azul Helper Terminal</title>
 <style>
-  /* --- Terminal & CRT Style --- */
+  :root {
+    --terminal-green: #00ff41;
+    --glow-color: rgba(0, 255, 65, 0.6);
+  }
+
   body, html {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    background: #000;
+    margin: 0; padding: 0; height: 100%;
+    background: #050505;
     font-family: 'Courier New', monospace;
-    color: #00ff00;
+    color: var(--terminal-green);
     overflow: hidden;
+    /* Text Glow Effect */
+    text-shadow: 0 0 5px var(--glow-color);
   }
 
   #terminal {
     position: relative;
     width: 100%;
     height: 100%;
-    padding: 20px;
+    padding: 30px;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
   }
 
   #output {
+    flex-grow: 1;
     white-space: pre-wrap;
-    line-height: 1.3em;
+    line-height: 1.5em;
     overflow-y: auto;
-    max-height: 80%;
-    padding-right: 10px;
+    margin-bottom: 60px;
+    scrollbar-width: none; /* Hide scrollbar for Firefox */
   }
 
+  #output::-webkit-scrollbar { display: none; } /* Hide scrollbar for Chrome/Safari */
+
   #inputBar {
-    position: absolute;
+    position: fixed;
     bottom: 20px;
-    width: calc(100% - 40px);
+    left: 30px;
+    width: calc(100% - 200px); /* Leave room for Azul */
     display: flex;
-    align-items: center;
+    background: rgba(0,0,0,0.8);
+    border-top: 1px solid var(--terminal-green);
+    padding-top: 10px;
   }
 
   #userInput {
     flex-grow: 1;
-    background: #000;
+    background: transparent;
     border: none;
-    border-bottom: 1px solid #00ff00;
-    color: #00ff00;
-    font-family: monospace;
-    font-size: 1rem;
-    padding: 5px;
+    color: var(--terminal-green);
+    font-family: inherit;
+    font-size: 1.2rem;
     outline: none;
   }
 
-  #enterBtn {
-    background: #000;
-    border: 1px solid #00ff00;
-    color: #00ff00;
-    padding: 5px 10px;
-    margin-left: 10px;
-    cursor: pointer;
-    font-family: monospace;
-  }
-
-  /* --- Scanlines overlay --- */
+  /* --- CRT & Scanline Effects --- */
   #scanlines {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: repeating-linear-gradient(
-      rgba(0,0,0,0.2) 0 1px,
-      rgba(0,0,0,0) 1px 3px
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%, 
+        rgba(0, 0, 0, 0.25) 50%
+    ), linear-gradient(90deg, 
+        rgba(255, 0, 0, 0.06), 
+        rgba(0, 255, 0, 0.02), 
+        rgba(0, 0, 255, 0.06)
     );
+    background-size: 100% 4px, 3px 100%;
     pointer-events: none;
-    z-index: 50;
+    z-index: 10;
+    animation: flicker 0.15s infinite;
   }
 
-  /* --- Azul Sprites --- */
+  @keyframes flicker {
+    0% { opacity: 0.9; }
+    50% { opacity: 1; }
+    100% { opacity: 0.9; }
+  }
+
+  /* --- Azul Sprite with Float Animation --- */
+  #azulContainer {
+    position: fixed;
+    bottom: 20px;
+    right: 40px;
+    width: 150px;
+    text-align: center;
+  }
+
   #azulSprite {
-    position: absolute;
-    bottom: 60px;
-    right: 50px;
-    width: 120px;
-    z-index: 100;
-    transition: all 0.5s ease;
+    width: 100%;
+    height: auto;
+    transition: transform 0.3s ease;
+    filter: drop-shadow(0 0 10px var(--glow-color));
+  }
+
+  .floating {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
   }
 </style>
 </head>
 <body>
 
+<div id="scanlines"></div>
+
 <div id="terminal">
-  <div id="output">Welcome to Azul Helper Terminal!\nAsk me anything about science, space, or coding.\n</div>
-
+  <div id="output"></div>
   <div id="inputBar">
-    <input type="text" id="userInput" placeholder="Type your question...">
-    <button id="enterBtn">ENTER</button>
+    <span style="margin-right:10px;">></span>
+    <input type="text" id="userInput" autofocus autocomplete="off">
   </div>
+</div>
 
-  <img id="azulSprite" src="waiting_azul.png" alt="Azul Helper">
-  <div id="scanlines"></div>
+<div id="azulContainer">
+  <img id="azulSprite" class="floating" src="idle_azul.png" alt="Azul">
 </div>
 
 <script>
 const output = document.getElementById('output');
 const input = document.getElementById('userInput');
-const button = document.getElementById('enterBtn');
 const azul = document.getElementById('azulSprite');
 
-// --- Helper: type text like terminal ---
-function typeText(text, delay=25) {
-    return new Promise(resolve => {
-        let i = 0;
-        const interval = setInterval(() => {
-            output.textContent += text[i];
-            output.scrollTop = output.scrollHeight;
-            i++;
-            if(i >= text.length) {
-                clearInterval(interval);
-                output.textContent += "\n\n";
-                resolve();
-            }
-        }, delay);
-    });
+// --- Audio Engine (Synthesized Beeps) ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playBeep(freq = 400, duration = 0.05) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
 }
 
-// --- Function to fetch answer from API (NASA example) ---
-async function getAnswer(query) {
-    // Placeholder: you can plug in real APIs like NASA Open APIs
-    const fallbackAnswers = {
-        "moon": "The Moon is Earth's only natural satellite. It is about 384,400 km away.",
-        "mars": "Mars is the fourth planet from the Sun. It's known as the Red Planet.",
-        "azul": "Azul is your helper. I can give you science and coding info!"
+// --- Terminal Typing Logic ---
+async function typeText(text) {
+    for (let char of text) {
+        output.textContent += char;
+        if (char !== " ") playBeep(600 + (Math.random() * 100));
+        output.scrollTop = output.scrollHeight;
+        await new Promise(r => setTimeout(r, 30));
+    }
+    output.textContent += "\n\n";
+}
+
+// --- Logic for Azul's Behavior ---
+const azulStates = {
+    idle: 'idle_azul.png',
+    waiting: 'waiting_azul.png',
+    flying: 'flying-azul-front-facing.png',
+    hover: 'hover-azul.png'
+};
+
+function setAzul(state) {
+    azul.src = azulStates[state];
+    // Add logic to change CSS classes based on state
+    if(state === 'flying') azul.parentElement.style.transform = 'scale(1.1) translateY(-50px)';
+    else azul.parentElement.style.transform = 'scale(1) translateY(0)';
+}
+
+// --- Mock API Response ---
+async function getResponse(query) {
+    await new Promise(r => setTimeout(r, 1000)); // Simulate thinking
+    const db = {
+        "hello": "Greetings, User. Systems fully operational.",
+        "status": "All systems green. Fuel: 98%. Curiosity: 100%.",
+        "nasa": "Connecting to deep space network... NASA data retrieved: The James Webb telescope is amazing!"
     };
+    const key = Object.keys(db).find(k => query.toLowerCase().includes(k));
+    return db[key] || "I've searched my database, but no records were found for that query.";
+}
 
-    // Simple keyword search for prototype
-    for(const key in fallbackAnswers) {
-        if(query.toLowerCase().includes(key)) return fallbackAnswers[key];
+// --- Main Event Loop ---
+input.addEventListener('keypress', async (e) => {
+    if (e.key === 'Enter') {
+        const val = input.value.trim();
+        if (!val) return;
+        
+        input.value = "";
+        output.textContent += `\nUSER: ${val}\n`;
+        
+        setAzul('waiting');
+        const reply = await getResponse(val);
+        
+        setAzul('flying');
+        await typeText(`AZUL: ${reply}`);
+        setAzul('idle');
     }
-
-    // If nothing matches, generic response
-    return "Hmm... I don't have data on that yet. Try asking something else!";
-}
-
-// --- Animate Azul sprite transitions ---
-function azulTransition(state) {
-    switch(state) {
-        case 'idle':
-            azul.src = 'idle_azul.png';
-            break;
-        case 'waiting':
-            azul.src = 'waiting_azul.png';
-            break;
-        case 'flying':
-            azul.src = 'flying-azul-front-facing.png';
-            break;
-        case 'hover':
-            azul.src = 'hover-azul.png';
-            break;
-    }
-}
-
-// --- Main interaction ---
-async function handleQuery() {
-    const question = input.value.trim();
-    if(!question) return;
-    output.textContent += "> " + question + "\n";
-    input.value = "";
-
-    azulTransition('flying');
-    await new Promise(r => setTimeout(r, 800)); // simulate flying
-    azulTransition('waiting');
-
-    const answer = await getAnswer(question);
-    await typeText(answer);
-
-    azulTransition('hover');
-    await new Promise(r => setTimeout(r, 1500));
-    azulTransition('idle');
-}
-
-// --- Event Listeners ---
-button.addEventListener('click', handleQuery);
-input.addEventListener('keypress', (e) => {
-    if(e.key === 'Enter') handleQuery();
 });
-</script>
 
+// Initial Welcome
+window.onload = () => typeText("SYSTEM BOOT SEQUENCE COMPLETE... \nWELCOME, OPERATOR. HOW CAN AZUL HELP TODAY?");
+</script>
 </body>
 </html>
