@@ -3,49 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Azul: Academic Partner</title>
+<title>Azul: Study Partner</title>
 <style>
   :root { --terminal-green: #00ff41; --glow-color: rgba(0, 255, 65, 0.6); }
   body, html { margin: 0; padding: 0; height: 100%; background: #050505; font-family: 'Courier New', monospace; color: var(--terminal-green); overflow: hidden; }
   #scanlines { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.05)); background-size: 100% 3px, 3px 100%; pointer-events: none; z-index: 100; opacity: 0.2; }
-  
-  /* Terminal UI */
   #terminal { position: relative; width: 100%; height: 100dvh; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; }
   #output { flex-grow: 1; white-space: pre-wrap; line-height: 1.5em; overflow-y: auto; margin-bottom: 90px; text-shadow: 0 0 5px var(--glow-color); }
-  #inputBar { position: fixed; bottom: 20px; left: 20px; width: calc(100% - 160px); display: flex; background: rgba(0,0,0,0.9); border-top: 1px solid var(--terminal-green); padding-top: 10px; z-index: 10; }
+  #inputBar { position: fixed; bottom: 20px; left: 20px; width: calc(100% - 150px); display: flex; background: rgba(0,0,0,0.9); border-top: 1px solid var(--terminal-green); padding-top: 10px; z-index: 10; }
   #userInput { flex-grow: 1; background: transparent; border: none; color: var(--terminal-green); font-family: inherit; font-size: 1rem; outline: none; }
-  
-  /* Sidebar/Notebook */
-  #notebook { position: fixed; top: 0; right: -280px; width: 280px; height: 100%; background: #0a0a0a; border-left: 1px solid var(--terminal-green); transition: 0.3s; z-index: 1000; padding: 20px; box-sizing: border-box; overflow-y: auto; }
-  #notebook.open { right: 0; }
-  .note-item { border-bottom: 1px solid #222; padding: 10px 0; font-size: 0.85rem; color: #888; }
-  #toggleNotes { position: fixed; top: 10px; right: 10px; background: var(--terminal-green); color: black; border: none; padding: 8px 12px; font-weight: bold; z-index: 1001; cursor: pointer; }
-  .export-btn { background: #333; color: white; border: 1px solid white; padding: 5px; width: 100%; margin-top: 10px; cursor: pointer; }
-
-  /* Azul Sprite */
-  #azulContainer { position: fixed; bottom: 20px; right: 20px; width: 120px; transition: all 0.5s ease; z-index: 20; pointer-events: none; }
+  #azulContainer { position: fixed; bottom: 20px; right: 20px; width: 110px; z-index: 20; pointer-events: none; }
   #azulSprite { width: 100%; filter: drop-shadow(0 0 10px var(--glow-color)); }
   .bobbing { animation: bob 3s ease-in-out infinite; }
   @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-  .flying-fx { animation: shake 0.1s infinite; }
-  @keyframes shake { 0% { transform: translate(1px, 1px); } 100% { transform: translate(-1px, -1px); } }
-  a { color: #fff; text-decoration: underline; font-weight: bold; }
+  #notesBtn { position: fixed; top: 10px; right: 10px; background: var(--terminal-green); color: black; border: none; padding: 5px 10px; font-weight: bold; z-index: 100; cursor: pointer; }
+  a { color: #fff; text-decoration: underline; }
 </style>
 </head>
 <body>
 
 <div id="scanlines"></div>
-<button id="toggleNotes" onclick="document.getElementById('notebook').classList.toggle('open')">NOTES</button>
-
-<div id="notebook">
-  <h2 style="color: var(--terminal-green); margin-top: 0;">STUDY LOG</h2>
-  <div id="notesList"></div>
-  <button class="export-btn" onclick="exportNotes()">EXPORT TO FILES</button>
-</div>
+<button id="notesBtn" onclick="alert(sessionNotes || 'No notes yet!')">LOG</button>
 
 <div id="terminal">
   <div id="output"></div>
-  <div id="inputBar"><span style="margin-right:10px;">></span><input type="text" id="userInput" autofocus autocomplete="off" spellcheck="false"></div>
+  <div id="inputBar"><span>> </span><input type="text" id="userInput" autofocus autocomplete="off"></div>
 </div>
 
 <div id="azulContainer" class="bobbing"><img id="azulSprite" src="waiting_azul.png"></div>
@@ -53,70 +35,25 @@
 <script>
 const output = document.getElementById('output');
 const input = document.getElementById('userInput');
-const azul = document.getElementById('azulSprite');
-const azulCont = document.getElementById('azulContainer');
-const notesList = document.getElementById('notesList');
+let sessionNotes = "";
 
-let sessionCount = 0;
-let fullLog = "";
-
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playBeep(freq) {
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    gain.gain.setValueAtTime(0.005, audioCtx.currentTime);
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.05);
-}
-
-async function typeText(text, isLink = false) {
-    if (isLink) {
-        const link = document.createElement('a');
-        link.href = text; link.target = "_blank"; link.textContent = "[OPEN SOURCE ARCHIVE]";
-        output.appendChild(link); output.innerHTML += "\n\n";
-    } else {
-        for (let char of text) {
-            output.textContent += char;
-            playBeep(400 + Math.random() * 200);
-            output.scrollTop = output.scrollHeight;
-            await new Promise(r => setTimeout(r, 20));
-        }
-        output.textContent += "\n";
+async function typeText(text, url = null) {
+    for (let char of text) {
+        output.textContent += char;
+        output.scrollTop = output.scrollHeight;
+        await new Promise(r => setTimeout(r, 15));
     }
+    if (url) {
+        output.innerHTML += `<br><a href="${url}" target="_blank">[VIEW ARCHIVE]</a>`;
+    }
+    output.textContent += "\n\n";
     output.scrollTop = output.scrollHeight;
 }
 
-function saveNote(q, a) {
-    fullLog += `Q: ${q}\nA: ${a}\n\n`;
-    const item = document.createElement('div');
-    item.className = 'note-item';
-    item.innerHTML = `<strong>${q.toUpperCase()}</strong><br>${a.substring(0, 60)}...`;
-    notesList.prepend(item);
-}
-
-function exportNotes() {
-    const blob = new Blob([fullLog], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `azul_study_session_${new Date().toLocaleDateString()}.txt`;
-    a.click();
-}
-
-function setAzul(state) {
-    azulCont.classList.remove('flying-fx');
-    if (state === 'waiting') { azul.src = 'waiting_azul.png'; azulCont.style.transform = 'translateY(0)'; }
-    else if (state === 'idle') { azul.src = 'idle_azul.png'; }
-    else if (state === 'flying') { azul.src = 'flying-azul-front-facing.png'; azulCont.classList.add('flying-fx'); azulCont.style.transform = 'translateY(-60px) scale(1.1)'; }
-    else if (state === 'hover') { azul.src = 'hover-azul.png'; azulCont.style.transform = 'translateY(-30px)'; }
-}
-
-async function searchWikipedia(query) {
+async function searchWiki(query) {
     try {
-        const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`;
-        const sRes = await fetch(searchUrl);
+        const sUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`;
+        const sRes = await fetch(sUrl);
         const sData = await sRes.json();
         if (sData.query.search.length > 0) {
             const title = sData.query.search[0].title;
@@ -128,52 +65,38 @@ async function searchWikipedia(query) {
     return null;
 }
 
-async function getAnswer(query) {
-    let q = query.toLowerCase().trim();
-    sessionCount++;
-
-    // 1. Math
-    const calc = q.match(/(\d+)\s*([x\*\+\-\/])\s*(\d+)/);
-    if (calc) {
-        const n1=parseInt(calc[1]), op=calc[2], n2=parseInt(calc[3]);
-        let r = (op==='x'||op==='*')?n1*n2 : (op==='+')?n1+n2 : (op==='-')?n1-n2 : n1/n2;
-        return { text: `CALCULATION: ${n1} ${op} ${n2} = ${r}` };
-    }
-
-    // 2. Knowledge Base Overrides
-    if (q.includes("first president") || q.includes("1st president")) return { text: "George Washington (1789–1797) was the 1st US President.", url: "https://en.wikipedia.org/wiki/George_Washington" };
-    if (q.includes("cite") || q.includes("source")) return { text: "MLA: (Author Page). APA: (Author, Year). Use Purdue OWL for full guides.", url: "https://owl.purdue.edu/owl/research_and_citation/resources.html" };
-
-    // 3. Wiki Search
-    output.textContent += "SEARCHING GLOBAL ARCHIVES...\n";
-    let clean = q.replace(/how to|what is|where is|tell me about/g, "").trim();
-    const data = await searchWikipedia(clean || q);
+async function handleQuery(q) {
+    let val = q.toLowerCase().trim();
     
+    // Quick Math
+    const math = val.match(/(\d+)\s*([x\*\+\-\/])\s*(\d+)/);
+    if (math) return { text: `CALC: ${eval(val.replace('x','*'))}` };
+
+    // Quick History
+    if (val.includes("president")) return { text: "George Washington was the 1st US President.", url: "https://en.wikipedia.org/wiki/George_Washington" };
+    if (val.includes("cite")) return { text: "Use MLA (Author Page) or APA (Author, Year).", url: "https://owl.purdue.edu/owl/research_and_citation/resources.html" };
+
+    // Wiki Search
+    output.textContent += "SEARCHING...\n";
+    const data = await searchWiki(val);
     if (data && data.extract) {
-        return { text: `ARCHIVE #${sessionCount}: ${data.extract}`, url: data.content_urls?.desktop.page };
+        return { text: data.extract, url: data.content_urls?.desktop.page };
     }
-    return { text: "No specific match found. Please refine your subject." };
+    return { text: "I couldn't find that. Try a simpler keyword." };
 }
 
 input.addEventListener('keydown', async (e) => {
     if (e.key === 'Enter') {
-        const val = input.value.trim();
-        if (!val) return;
+        const val = input.value;
         input.value = "";
-        output.textContent += `\n> ${val}\n`;
-        setAzul('idle');
-        const res = await getAnswer(val);
-        setAzul('flying');
-        await new Promise(r => setTimeout(r, 600));
-        setAzul('hover');
-        await typeText(`AZUL: ${res.text}`);
-        if (res.url) await typeText(res.url, true);
-        saveNote(val, res.text);
-        setAzul('waiting');
+        output.textContent += `> ${val}\n`;
+        const res = await handleQuery(val);
+        sessionNotes += `• ${val}: ${res.text.substring(0,30)}...\n`;
+        await typeText(`AZUL: ${res.text}`, res.url);
     }
 });
 
-window.onload = () => typeText("AZUL STUDY SYSTEM ONLINE. ACCESSING WIKIPEDIA CORE...");
+window.onload = () => typeText("SYSTEM ONLINE. READY TO STUDY.");
 </script>
 </body>
 </html>
