@@ -190,13 +190,23 @@ input.addEventListener('keydown', async (e) => {
         userLine.textContent = `> RESEARCH_INPUT: ${val}`;
         output.appendChild(userLine);
         
-        if (val.toLowerCase().includes("cow") && val.toLowerCase().includes("stomach")) {
-            const imgDiv = document.createElement("div");
-            imgDiv.className = "diagram-note";
-            imgDiv.innerHTML = "AZUL: BIOLOGICAL DIAGRAM LOADED - RUMINANT SYSTEM";
-            output.appendChild(imgDiv);
-            
-        }
+     // Cow stomach visual trigger
+if (val.toLowerCase().includes("cow") && val.toLowerCase().includes("stomach")) {
+    const imgContainer = document.createElement("div");
+    imgContainer.className = "diagram-note";
+    imgContainer.innerHTML = "AZUL: BIOLOGICAL DIAGRAM LOADED - RUMINANT SYSTEM";
+    
+    // This creates the actual image on the screen
+    const diagramImg = document.createElement("img");
+    diagramImg.src = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ruminant_system.svg/800px-Ruminant_system.svg.png";
+    diagramImg.style.width = "100%"; 
+    diagramImg.style.marginTop = "10px";
+    diagramImg.style.border = "1px solid var(--terminal-green)";
+    
+    imgContainer.appendChild(diagramImg);
+    output.appendChild(imgContainer);
+}
+
 
         const res = await handleQuery(val);
         sessionNotes += `[LOG] ${val}\n`;
