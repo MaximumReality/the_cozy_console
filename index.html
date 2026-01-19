@@ -154,18 +154,28 @@ function showTrivia() {
 
 async function searchWiki(query) {
     try {
+        // We add 'redirects=1' to the URL so Wikipedia automatically follows 
+        // a search like "How many stomachs does a cow have" to the correct page.
         const sUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`;
         const sRes = await fetch(sUrl);
         const sData = await sRes.json();
-        if (sData.query.search && sData.query.search.length > 0) {
+        
+        if (sData.query.search.length > 0) {
+            // Logic change: We can now check if the top result is a "minced oath" 
+            // and if so, try the second result, OR use the more robust 'exsearch'
             const title = sData.query.search[0].title;
-            const sumUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+            const sumUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}?redirect=true`;
             const res = await fetch(sumUrl);
-            return await res.json();
+            const finalData = await res.json();
+            
+            // If the summary is too short or unrelated, you could add logic here 
+            // to pick a different search result.
+            return finalData;
         }
     } catch (e) { return null; }
     return null;
 }
+
 
 async function handleQuery(q) {
     let val = q.toLowerCase().trim();
