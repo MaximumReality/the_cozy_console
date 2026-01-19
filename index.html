@@ -101,8 +101,8 @@
 <script>
 const output = document.getElementById('output');
 const input = document.getElementById('userInput');
+const azulSprite = document.getElementById('azulSprite'); // Link to the sprite
 let lastResult = null;
-let sessionNotes = "";
 
 const triviaFacts = [
     "QUANTUM: Atoms are 99.9999% empty space.",
@@ -111,15 +111,6 @@ const triviaFacts = [
     "PHYSICS: Light takes 8m 20s to travel from the Sun to Earth.",
     "BIOLOGY: An octopus has three hearts and blue blood."
 ];
-
-// --- SPRITE CONTROLLER ---
-function updateAzul(state) {
-    const sprite = document.getElementById('azulSprite');
-    if (state === 'searching') sprite.src = 'searching_azul.png';
-    if (state === 'talking') sprite.src = 'talking_azul.png';
-    if (state === 'thinking') sprite.src = 'thinking_azul.png';
-    if (state === 'waiting') sprite.src = 'waiting_azul.png';
-}
 
 function toggleAmber() {
     const root = document.documentElement;
@@ -134,7 +125,9 @@ function toggleAmber() {
 }
 
 async function typeText(text, url = null) {
-    updateAzul('talking'); // Switch to talking sprite
+    // START TALKING
+    azulSprite.src = "talking_azul.png"; 
+    
     let messageSpan = document.createElement("div"); 
     messageSpan.style.marginBottom = "15px";
     output.appendChild(messageSpan);
@@ -154,12 +147,15 @@ async function typeText(text, url = null) {
         linkAnchor.style.marginTop = "8px";
         messageSpan.appendChild(linkAnchor);
     }
-    updateAzul('waiting'); // Return to idle sprite
+    
+    // BACK TO WAITING
+    azulSprite.src = "waiting_azul.png";
     output.scrollTop = output.scrollHeight;
 }
 
 async function searchWiki(query) {
-    updateAzul('searching'); // Switch to searching sprite
+    // SEARCHING STATE
+    azulSprite.src = "searching_azul.png";
     try {
         const sUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*&srlimit=1`;
         const sRes = await fetch(sUrl);
@@ -179,9 +175,9 @@ async function searchWiki(query) {
 async function handleQuery(q) {
     let val = q.toLowerCase().trim();
     
-    // Priority Citation/NASA check (Thinking state)
-    if (val.includes("cite") || val.includes("nasa")) {
-        updateAzul('thinking');
+    // THINKING STATE for Authority Overrides
+    if (val.includes("cite") || val.includes("nasa") || val.includes("purdue")) {
+        azulSprite.src = "thinking_azul.png";
     }
 
     if (val.includes("cite") || val.includes("citation") || val.includes("mla")) {
@@ -192,6 +188,7 @@ async function handleQuery(q) {
         return { text: "CITATION PROTOCOL: Use Purdue OWL for gold-standard MLA/APA guides.", url: "https://owl.purdue.edu/owl/research_and_citation/resources.html" };
     }
 
+    // GENERAL SEARCH
     const data = await searchWiki(val);
     if (data) {
         lastResult = { title: data.title, url: data.url };
@@ -229,6 +226,7 @@ function showTrivia() {
 
 window.onload = () => typeText("OMNI-AZUL v1.1 ONLINE. CARD CATALOG LOADED.");
 </script>
+
 
 
 </body>
