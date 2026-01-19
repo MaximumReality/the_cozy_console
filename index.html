@@ -30,6 +30,10 @@
     }
     .toolbar-group { display: flex; gap: 8px; }
 
+    /* Instructions Overlay */
+    #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    #guide { background: #000; border: 2px solid var(--terminal-green); padding: 25px; max-width: 400px; text-align: left; box-shadow: 0 0 15px var(--glow-color); }
+
     /* Workspace */
     #terminal { 
       position: relative; width: 100%; height: calc(100dvh - 50px); 
@@ -44,7 +48,6 @@
     .btn-ui { background: var(--terminal-green); color: black; border: none; padding: 5px 10px; font-weight: bold; cursor: pointer; text-decoration: none; border-radius: 3px; font-size: 0.8rem; }
     #homeBtn { font-size: 1.2rem; background: transparent; color: var(--terminal-green); border: 1px solid var(--terminal-green); }
 
-    /* UI Elements */
     #azulContainer { position: fixed; bottom: 20px; right: 20px; width: 110px; z-index: 20; pointer-events: none; }
     #azulSprite { width: 100%; filter: drop-shadow(0 0 10px var(--glow-color)); }
     .bobbing { animation: bob 3s ease-in-out infinite; }
@@ -53,6 +56,17 @@
   </style>
 </head>
 <body>
+
+<div id="overlay">
+  <div id="guide">
+    <h2 style="margin-top:0; color:white;">OMNI-AZUL v1.1</h2>
+    <p>• <strong>SEARCH:</strong> Type any topic for an academic summary.</p>
+    <p>• <strong>MATH:</strong> Simple equations (e.g., 5 * 25).</p>
+    <p>• <strong>CITATION:</strong> Type 'cite' for formatting help.</p>
+    <p>• <strong>PRINT:</strong> Use the icon to save your research.</p>
+    <button class="btn-ui" style="width:100%; padding:10px;" onclick="document.getElementById('overlay').style.display='none'">BOOT SYSTEM</button>
+  </div>
+</div>
 
 <div id="toolbar">
   <a href="https://maximumreality.xyz" class="btn-ui" id="homeBtn">🏡</a>
@@ -75,14 +89,13 @@
 <script>
 const output = document.getElementById('output');
 const input = document.getElementById('userInput');
-let sessionNotes = "";
 
 const triviaFacts = [
     "QUANTUM: Atoms are 99.9999% empty space.",
     "ANATOMY: Your blood vessels could circle the Earth 4 times.",
     "SPACE: One day on Venus is longer than its entire year.",
     "PHYSICS: Light takes 8m 20s to travel from the Sun to Earth.",
-    "CYBERNETICS: The first computer 'bug' was an actual moth in 1947."
+    "ANATOMY: The human brain operates on about 20 watts of power."
 ];
 
 async function typeText(text, url = null) {
@@ -110,14 +123,14 @@ async function typeText(text, url = null) {
 
 async function searchWiki(query) {
     try {
-        let clean = query.replace(/how many|what is|define/gi, "").trim();
+        let clean = query.replace(/how many|what is|define|tell me about/gi, "").trim();
         const sUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(clean)}&format=json&origin=*&srlimit=5`;
         const sRes = await fetch(sUrl);
         const sData = await sRes.json();
         
         if (sData.query.search.length > 0) {
             let idx = 0;
-            const blacklist = ["phrase", "idiom", "tripe", "recipe"];
+            const blacklist = ["phrase", "idiom", "tripe", "recipe", "song", "album"];
             for(let i=0; i<sData.query.search.length; i++) {
                 if (!blacklist.some(w => sData.query.search[i].title.toLowerCase().includes(w))) {
                     idx = i; break;
@@ -128,24 +141,35 @@ async function searchWiki(query) {
             return await res.json();
         }
     } catch (e) { return null; }
+    return null;
 }
 
 async function handleQuery(q) {
     let val = q.toLowerCase().trim();
     
-    // Core Fact Override
+    // Core Biology Override
     if (val.includes("cow") && val.includes("stomach")) {
         return { 
-            text: "Cows have one stomach with four compartments: Rumen, Reticulum, Omasum, and Abomasum. This allows for complex fermentation of plant fibers.",
+            text: "Cows have one stomach with four specialized compartments: the Rumen, Reticulum, Omasum, and Abomasum. This ruminant system allows them to digest complex plant matter.",
             url: "https://en.wikipedia.org/wiki/Ruminant" 
         };
     }
+
+    // Math
+    const math = val.match(/(\d+)\s*([x\*\+\-\/])\s*(\d+)/);
+    if (math) {
+        const n1=parseInt(math[1]), op=math[2], n2=parseInt(math[3]);
+        let r = (op==='x'||op==='*')?n1*n2 : (op==='+')?n1+n2 : (op==='-')?n1-n2 : n1/n2;
+        return { text: `CALCULATION RESULT: ${r}` };
+    }
+
+    if (val.includes("cite")) return { text: "CITATIONS: Use MLA (Author. 'Title.' Container, Year) or APA (Author, Year). Link provided for guide.", url: "https://owl.purdue.edu/owl/research_and_citation/resources.html" };
 
     const data = await searchWiki(val);
     if (data && data.extract) {
         return { text: data.extract, url: data.content_urls?.desktop.page };
     }
-    return { text: "No record found. Refine query parameters." };
+    return { text: "No academic record found. Please refine search terms." };
 }
 
 input.addEventListener('keydown', async (e) => {
@@ -169,7 +193,7 @@ function showTrivia() {
     typeText(`OMNI-FACT: ${fact}`);
 }
 
-window.onload = () => typeText("OMNI-AZUL v1.0 ONLINE. READY.");
+window.onload = () => typeText("OMNI-AZUL v1.1 ONLINE. READY FOR RESEARCH.");
 </script>
 </body>
 </html>
