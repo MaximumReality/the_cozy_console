@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Cozy Console</title>
+
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: #1b1a17;
+    font-family: "Courier New", monospace;
+    color: #e8e3d8;
+}
+
+#screen {
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, #2b2a25 0%, #12110f 70%);
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.8);
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+#output {
+    white-space: pre-wrap;
+    line-height: 1.4;
+    min-height: 60%;
+}
+
+button {
+    background: #3a382f;
+    color: #f5f0e6;
+    border: 2px solid #5a574a;
+    padding: 12px 16px;
+    margin: 8px 6px 0 0;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #4a473b;
+}
+
+.scanlines {
+    pointer-events: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.05),
+        rgba(0,0,0,0.05) 1px,
+        transparent 1px,
+        transparent 3px
+    );
+}
+</style>
+</head>
+
+<body>
+
+<div id="screen">
+    <div id="output">Booting Cozy Console...
+System ready.
+Tap a button to begin.</div>
+
+    <button onclick="askMochkil()">ASK MOCHKIL</button>
+    <button onclick="askAzul()">ASK AZUL</button>
+    <button onclick="openVault()">OPEN THE VAULT</button>
+</div>
+
+<div class="scanlines"></div>
+
+<script>
+const output = document.getElementById("output");
+
+function typeText(text) {
+    output.textContent = "";
+    let i = 0;
+    const interval = setInterval(() => {
+        output.textContent += text.charAt(i);
+        i++;
+        if (i >= text.length) clearInterval(interval);
+    }, 20);
+}
+
+// --- KNOWLEDGE POOLS ---
+const mochkilLines = [
+    "🐭 Mochkil says:\nIf dinner goes wrong, add cheese and pretend it was the plan.",
+    "🐭 Mochkil says:\nCooking is just science that smells better.",
+    "🐭 Mochkil says:\nIf you mess up a recipe, congratulations — you invented one."
+];
+
+const azulLines = [
+    "🐱 Azul says:\nComputers don't think. They follow instructions very seriously.",
+    "🐱 Azul says:\nGravity is just space telling things where to sit.",
+    "🐱 Azul says:\nCuriosity is a renewable resource."
+];
+
+const vaultLines = [
+    "📚 The Vault opens:\nDid you know old computers used sound to store data?",
+    "📚 The Vault opens:\nA mistake is just information arriving late.",
+    "📚 The Vault opens:\nYou are allowed to learn slowly."
+];
+
+// --- BUTTON HANDLERS ---
+function askMochkil() {
+    typeText(mochkilLines[Math.floor(Math.random() * mochkilLines.length)]);
+}
+
+function askAzul() {
+    typeText(azulLines[Math.floor(Math.random() * azulLines.length)]);
+}
+
+function openVault() {
+    typeText(vaultLines[Math.floor(Math.random() * vaultLines.length)]);
+}
+</script>
+
+</body>
+</html>
