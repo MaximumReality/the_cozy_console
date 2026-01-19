@@ -146,7 +146,9 @@ async function searchWiki(query) {
         
         if (sData.query.search.length > 0) {
             let resultIndex = 0;
-            const blacklist = ["phrase", "idiom", "exclamation", "song", "album", "film", "fictional"];
+            // BLACKLIST added here to avoid culinary terms like 'tripe'
+            const blacklist = ["phrase", "idiom", "exclamation", "song", "album", "film", "fictional", "tripe", "recipe", "cuisine"];
+            
             for(let i=0; i < sData.query.search.length; i++) {
                 let snippet = sData.query.search[i].snippet.toLowerCase();
                 let title = sData.query.search[i].title.toLowerCase();
@@ -207,11 +209,11 @@ input.addEventListener('keydown', async (e) => {
         userLine.textContent = `> RESEARCH_INPUT: ${val}`;
         output.appendChild(userLine);
         
-        // Cow stomach visual trigger
+        // Corrected Biology Trigger
         if (val.includes("cow") && val.includes("stomach")) {
             const imgDiv = document.createElement("div");
             imgDiv.className = "diagram-note";
-            imgDiv.innerHTML = "AZUL: VISUAL AID TRIGGERED.<br>";
+            imgDiv.innerHTML = "AZUL: BIOLOGICAL DIAGRAM LOADED - RUMINANT SYSTEM<br>";
             output.appendChild(imgDiv);
         }
 
@@ -228,5 +230,6 @@ function showTrivia() {
 
 window.onload = () => typeText("OMNI-AZUL RESEARCH TERMINAL v1.0: ONLINE.");
 </script>
+
 </body>
 </html>
