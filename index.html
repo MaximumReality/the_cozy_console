@@ -90,55 +90,59 @@ function setAzul(state) {
 async function getAnswer(query) {
     let q = query.toLowerCase().trim();
 
-    // --- 1. PRIORITY ACADEMIC TRIGGERS ---
-    // If 'cite' or 'source' is in the query, bypass Wikipedia entirely
-    if (q.includes("cite") || q.includes("source") || q.includes("citation") || q.includes("bibliography")) {
+    // --- 1. SIMPLE CALCULATOR (9x4, 10/2, 5+5) ---
+    // This looks for "Number x Number" or "Number * Number"
+    const calcMatch = q.match(/(\d+)\s*([x\*\+\-\/])\s*(\d+)/);
+    if (calcMatch) {
+        const n1 = parseInt(calcMatch[1]);
+        const op = calcMatch[2];
+        const n2 = parseInt(calcMatch[3]);
+        let res;
+        if (op === 'x' || op === '*') res = n1 * n2;
+        if (op === '+') res = n1 + n2;
+        if (op === '-') res = n1 - n2;
+        if (op === '/') res = n1 / n2;
+        return { text: `CALCULATION: ${n1} ${op} ${n2} = ${res}.` };
+    }
+
+    // --- 2. CONCEPTUAL ALGEBRA (How to solve for x) ---
+    if (q.includes("solve for x") || q.includes("how to solve x")) {
         return { 
-            text: "ACADEMIC GUIDE: To cite sources properly, use a standard format:\n\n" +
-                  "• MLA (English/Arts): Author. 'Title.' Container, Year.\n" +
-                  "• APA (Science/Psych): Author. (Year). Title. Source.\n\n" +
-                  "Would you like me to explain a specific style like MLA or APA?",
+            text: "ALGEBRA TIP: To solve for x, you must isolate it. 1. Move numbers without x to the other side (change + to -). 2. Divide by the number attached to x. Try typing an equation like '2x = 10'.",
+            url: "https://en.wikipedia.org/wiki/Algebra"
+        };
+    }
+
+    // --- 3. ACADEMIC CITATIONS ---
+    if (q.includes("cite") || q.includes("source") || q.includes("mla") || q.includes("apa")) {
+        return { 
+            text: "CITATION GUIDE: MLA uses (Author Page). APA uses (Author, Year). Use these to give credit to researchers!",
             url: "https://owl.purdue.edu/owl/research_and_citation/resources.html" 
         };
     }
 
-    // --- 2. EMERGENCY & MATH ---
-    if (q.includes("cpr")) {
-        return { 
-            text: "EMERGENCY: 1. Call 911. 2. Push hard and fast in center of chest. 3. Use 'Stayin' Alive' beat (100 bpm).",
-            url: "https://en.wikipedia.org/wiki/Cardiopulmonary_resuscitation" 
-        };
-    }
-
+    // --- 4. ACTUAL EQUATION SOLVER (x + 5 = 10) ---
     if (q.includes("=")) {
-        const math = q.match(/x\s*([\+\-\*\/])\s*(\d+)\s*=\s*(\d+)/);
-        if (math) {
-            const op = math[1]; const a = parseInt(math[2]); const b = parseInt(math[3]);
-            if (op === "+") return { text: `ALGEBRA: Subtract ${a} from both sides. x = ${b - a}.` };
-            if (op === "-") return { text: `ALGEBRA: Add ${a} to both sides. x = ${b + a}.` };
+        const plusMatch = q.match(/x\s*\+\s*(\d+)\s*=\s*(\d+)/);
+        if (plusMatch) {
+            const a = parseInt(plusMatch[1]); const b = parseInt(plusMatch[2]);
+            return { text: `SOLVING: Subtract ${a} from both sides. x = ${b - a}.` };
         }
     }
 
     if (q === "clear") { output.textContent = ""; return { text: "Terminal wiped." }; }
 
-    // --- 3. THE "ALL-KNOWING" WIKIPEDIA SEARCH ---
+    // --- 5. WIKIPEDIA FALLBACK ---
     output.textContent += `CONSULTING ARCHIVES...\n`;
-    
-    // Clean up the search term
-    let cleanQuery = q.replace(/how to|what is|tell me about|search for|properly|can i/g, "").trim();
+    let cleanQuery = q.replace(/how to|what is|tell me about|search for/g, "").trim();
     
     const data = await searchWikipedia(cleanQuery);
-    
     if (data && data.extract) {
-        return { 
-            text: `WIKIPEDIA: ${data.extract}`, 
-            url: data.content_urls ? data.content_urls.desktop.page : `https://en.wikipedia.org/wiki/${data.title}`
-        };
+        return { text: `WIKIPEDIA: ${data.extract}`, url: data.content_urls?.desktop.page };
     }
 
-    return { text: "I couldn't find a direct file. Try a simpler topic name like 'Chemistry' or 'The Moon'." };
+    return { text: "I couldn't find a direct file. Try a specific topic like 'Photosynthesis' or 'Newton'." };
 }
-
 
 
 input.addEventListener('keydown', async (e) => {
