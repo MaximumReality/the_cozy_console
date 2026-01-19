@@ -141,22 +141,34 @@ async function searchWiki(query) {
     return null;
 }
 
+// 1. Add this variable at the top of your script with 'output' and 'input'
+let lastResult = null; 
+
+// 2. Update your handleQuery to save the 'lastResult'
 async function handleQuery(q) {
     let val = q.toLowerCase().trim();
     
-    // 1. Core Biology Hard-Facts (Card Catalog Priority)
-    if (val.includes("cow") && val.includes("stomach")) {
-        return { 
-            text: "Cows have one stomach with four specialized compartments: the Rumen, Reticulum, Omasum, and Abomasum. This ruminant system allows them to digest tough plant cellulose.",
-            url: "https://en.wikipedia.org/wiki/Ruminant" 
-        };
+    // NEW: Automatic Citation Generator
+    if (val === "cite" || val === "cite this") {
+        if (!lastResult) return { text: "No active record in memory to cite. Please perform a search first." };
+        
+        const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const mla = `"${lastResult.title}." Wikipedia, Wikimedia Foundation, ${date}, ${lastResult.url}.`;
+        
+        return { text: `MLA CITATION:\n${mla}` };
     }
-    if (val.includes("octopus") && val.includes("heart")) {
-        return {
-            text: "An octopus has three hearts: one systemic heart that circulates blood around the body and two branchial hearts that pump it through each of the two gills.",
-            url: "https://en.wikipedia.org/wiki/Octopus#Anatomy_and_physiology"
-        };
+
+    // (Keep your existing Cow/Octopus/NASA logic here...)
+    
+    const data = await searchWiki(val);
+    if (data && data.extract) {
+        // We save the title and url for the 'cite' command
+        lastResult = { title: data.title || val.toUpperCase(), url: data.url };
+        return { text: data.extract, url: data.url };
     }
+    return { text: "No academic record found." };
+}
+
 
     // 2. Math Layer
     const mathMatch = val.match(/(\d+)\s*([x\*\+\-\/])\s*(\d+)/);
