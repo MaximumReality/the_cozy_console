@@ -3,40 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Azul: Study Partner Pro</title>
+<title>Omni-Azul: Research Partner</title>
 <style>
-  :root { --terminal-green: #00ff41; --glow-color: rgba(0, 255, 65, 0.6); --header-bg: #1a1a1a; }
+  :root { --terminal-green: #00ff41; --glow-color: rgba(0, 255, 65, 0.6); --header-bg: #111; }
   body, html { margin: 0; padding: 0; height: 100%; background: #050505; font-family: 'Courier New', monospace; color: var(--terminal-green); overflow: hidden; }
   
-  /* Toolbar at the top */
+  /* Toolbar */
   #toolbar { 
     position: fixed; top: 0; left: 0; width: 100%; height: 50px; 
     background: var(--header-bg); border-bottom: 1px solid var(--terminal-green); 
     display: flex; align-items: center; justify-content: space-between; 
     padding: 0 15px; box-sizing: border-box; z-index: 1500; 
   }
-  .toolbar-group { display: flex; gap: 10px; }
+  .toolbar-group { display: flex; gap: 8px; }
 
-  /* Adjust Terminal to start below Toolbar */
+  /* Adjusted Workspace */
   #terminal { 
     position: relative; width: 100%; height: calc(100dvh - 50px); 
     margin-top: 50px; padding: 20px; box-sizing: border-box; 
     display: flex; flex-direction: column; 
   }
-  
   #output { flex-grow: 1; white-space: pre-wrap; line-height: 1.5em; overflow-y: auto; margin-bottom: 90px; text-shadow: 0 0 5px var(--glow-color); }
   
-  /* Input Bar fixed at bottom */
   #inputBar { position: fixed; bottom: 20px; left: 20px; width: calc(100% - 150px); display: flex; background: rgba(0,0,0,0.9); border-top: 1px solid var(--terminal-green); padding-top: 10px; z-index: 10; }
   #userInput { flex-grow: 1; background: transparent; border: none; color: var(--terminal-green); font-family: inherit; font-size: 1rem; outline: none; }
   
-  /* Buttons */
-  .btn-ui { background: var(--terminal-green); color: black; border: none; padding: 5px 12px; font-weight: bold; cursor: pointer; text-decoration: none; border-radius: 3px; font-size: 0.8rem; }
-  #homeBtn { font-size: 1.1rem; padding: 2px 8px; }
+  .btn-ui { background: var(--terminal-green); color: black; border: none; padding: 5px 10px; font-weight: bold; cursor: pointer; text-decoration: none; border-radius: 3px; font-size: 0.8rem; }
+  #homeBtn { font-size: 1.2rem; background: transparent; color: var(--terminal-green); border: 1px solid var(--terminal-green); }
 
   /* Overlay */
-  #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
-  #guide { background: #111; border: 2px solid var(--terminal-green); padding: 25px; max-width: 400px; position: relative; }
+  #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  #guide { background: #000; border: 2px solid var(--terminal-green); padding: 25px; max-width: 400px; text-align: left; }
   
   #azulContainer { position: fixed; bottom: 20px; right: 20px; width: 110px; z-index: 20; pointer-events: none; }
   #azulSprite { width: 100%; filter: drop-shadow(0 0 10px var(--glow-color)); }
@@ -49,17 +46,19 @@
 
 <div id="overlay">
   <div id="guide">
-    <h2 style="margin-top:0">SYSTEM INITIALIZED</h2>
-    <p>• Use the <strong>Toolbar</strong> for quick actions.</p>
-    <p>• Search topics for <strong>Coordinates</strong> & Data.</p>
-    <p>• Type <strong>Math</strong> or <strong>Citations</strong> for help.</p>
-    <button class="btn-ui" style="width:100%; margin-top:10px;" onclick="document.getElementById('overlay').style.display='none'">START SESSION</button>
+    <h2 style="margin-top:0; color:white;">OMNI-AZUL v1.0</h2>
+    <p>• <strong>SEARCH:</strong> Precise academic summaries.</p>
+    <p>• <strong>LOCATE:</strong> City names return coordinates.</p>
+    <p>• <strong>SOLVE:</strong> Direct math and citation help.</p>
+    <p>• <strong>TRIVIA:</strong> Quantum and Anatomy facts.</p>
+    <button class="btn-ui" style="width:100%; padding:10px;" onclick="document.getElementById('overlay').style.display='none'">BOOT SYSTEM</button>
   </div>
 </div>
 
 <div id="toolbar">
   <a href="https://maximumreality.xyz" class="btn-ui" id="homeBtn">🏡</a>
   <div class="toolbar-group">
+    <button class="btn-ui" onclick="output.textContent=''; typeText('TERMINAL PURGED. WAITING...')">🗑️</button>
     <button class="btn-ui" onclick="showTrivia()">FACT</button>
     <button class="btn-ui" onclick="alert(sessionNotes || 'No notes yet!')">LOG</button>
   </div>
@@ -80,12 +79,12 @@ let sessionNotes = "";
 const triviaFacts = [
     "QUANTUM: Atoms are 99.9999% empty space. The whole human race could fit in a sugar cube.",
     "ANATOMY: Your blood vessels could circle the Earth 4 times if laid end-to-end.",
-    "QUANTUM: Particles can exist in two places at once until they are observed (Superposition).",
-    "ANATOMY: The jaw muscle (Masseter) is the strongest muscle in the body relative to its size.",
-    "QUANTUM: Quantum tunneling allows particles to pass through solid walls; it's why the Sun shines.",
-    "ANATOMY: Your stomach acid is strong enough to dissolve stainless steel razor blades.",
+    "QUANTUM: Particles can exist in two places at once until observed (Superposition).",
+    "ANATOMY: The jaw muscle (Masseter) is the strongest muscle relative to its size.",
+    "QUANTUM: Quantum tunneling allows particles to pass through walls; it's why the Sun shines.",
+    "ANATOMY: Your stomach acid is strong enough to dissolve stainless steel.",
     "SPACE: One day on Venus is longer than its entire year.",
-    "HISTORY: The word 'Salary' comes from the Roman word for 'Salt'."
+    "HISTORY: The word 'Salary' comes from the Roman word for 'Salt' (Salarium)."
 ];
 
 async function typeText(text, url = null, geo = null) {
@@ -104,7 +103,7 @@ async function typeText(text, url = null, geo = null) {
 
 function showTrivia() {
     const fact = triviaFacts[Math.floor(Math.random() * triviaFacts.length)];
-    typeText(`AZUL TRIVIA: ${fact}`);
+    typeText(`OMNI-FACT: ${fact}`);
 }
 
 async function searchWiki(query) {
@@ -129,12 +128,12 @@ async function handleQuery(q) {
     if (math) {
         const n1=parseInt(math[1]), op=math[2], n2=parseInt(math[3]);
         let r = (op==='x'||op==='*')?n1*n2 : (op==='+')?n1+n2 : (op==='-')?n1-n2 : n1/n2;
-        return { text: `CALC: ${n1} ${op} ${n2} = ${r}` };
+        return { text: `RESULT: ${r}` };
     }
 
-    if (val.includes("cite")) return { text: "CITE GUIDE: MLA (Author Page). APA (Author, Year). Use Purdue OWL.", url: "https://owl.purdue.edu/owl/research_and_citation/resources.html" };
+    if (val.includes("cite")) return { text: "CITATIONS: MLA (Author Page) or APA (Author, Year). Refer to Purdue OWL for details.", url: "https://owl.purdue.edu/owl/research_and_citation/resources.html" };
 
-    output.textContent += "CONSULTING ARCHIVES...\n";
+    output.textContent += "OMNI-LINK SEARCHING...\n";
     const data = await searchWiki(val);
     if (data && data.extract) {
         let coords = null;
@@ -143,7 +142,7 @@ async function handleQuery(q) {
         }
         return { text: data.extract, url: data.content_urls?.desktop.page, geo: coords };
     }
-    return { text: "No direct match found. Try a specific keyword." };
+    return { text: "Archive record not found. Please refine your query." };
 }
 
 input.addEventListener('keydown', async (e) => {
@@ -153,12 +152,12 @@ input.addEventListener('keydown', async (e) => {
         input.value = "";
         output.textContent += `> ${val}\n`;
         const res = await handleQuery(val);
-        sessionNotes += `• ${val}: ${res.text.substring(0,35)}...\n`;
+        sessionNotes += `[${val}] ${res.text.substring(0,35)}...\n`;
         await typeText(`AZUL: ${res.text}`, res.url, res.geo);
     }
 });
 
-window.onload = () => typeText("SYSTEM ONLINE. READY TO STUDY.");
+window.onload = () => typeText("OMNI-AZUL PROTOCOL ACTIVE. AWAITING INPUT.");
 </script>
 </body>
 </html>
