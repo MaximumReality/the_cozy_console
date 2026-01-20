@@ -129,7 +129,6 @@ async function typeText(text, url = null, geo = null) {
     messageSpan.style.marginBottom = "15px";
     output.appendChild(messageSpan);
     
-    // Format coordinates if present
     let displayGeo = geo ? `\n\nCOORDINATES: ${geo}` : "";
     let fullText = text + displayGeo;
     
@@ -156,19 +155,16 @@ async function typeText(text, url = null, geo = null) {
 async function searchWiki(query) {
     azulSprite.src = "hover-azul.png";
     try {
-        // 1. SMART SUBJECT EXTRACTION (Ignore "do", "feel", "where is", etc.)
         let cleanQuery = query.toLowerCase()
             .replace(/^(do|does|how|where|is|what|feel|have)\s+/g, "")
             .replace(/\s+(feel|pain|eyes|brains|have|is|located)$/g, "");
 
-        // 2. Try Opensearch with the CLEANED subject first
         const openUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(cleanQuery)}&limit=1&namespace=0&format=json&origin=*`;
         const openRes = await fetch(openUrl);
         const openData = await openRes.json();
         
         let title = (openData && openData[1].length > 0) ? openData[1][0] : null;
 
-        // 3. Fallback to full query search if subject-lock fails
         if (!title) {
             const listUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*&srlimit=1`;
             const listRes = await fetch(listUrl);
@@ -179,12 +175,10 @@ async function searchWiki(query) {
         }
 
         if (title) {
-            // 4. GET PRECISE SUMMARY (REST API)
             const sumUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}?redirect=true`;
             const sumRes = await fetch(sumUrl);
             const sumData = await sumRes.json();
 
-            // 5. GET COORDINATES (Action API)
             const coordUrl = `https://en.wikipedia.org/w/api.php?action=query&prop=coordinates&titles=${encodeURIComponent(title)}&format=json&origin=*`;
             const cRes = await fetch(coordUrl);
             const cData = await cRes.json();
@@ -207,12 +201,10 @@ async function searchWiki(query) {
     return null;
 }
 
-
-
 async function handleQuery(q) {
     let val = q.toLowerCase().trim();
     
-    // 1. THE NEW PART: ETHICS MODE
+    // 1. ETHICS MODE
     const ethicsWords = ["should", "moral", "right", "wrong", "ethical", "cruel", "humane"];
     const isEthicsQuery = ethicsWords.some(word => val.includes(word));
 
@@ -227,7 +219,7 @@ async function handleQuery(q) {
         }
     }
 
-    // 2. THE PART YOU ALREADY HAVE: CITATIONS
+    // 2. CITATIONS
     if (val.includes("cite") || val.includes("citation") || val.includes("mla") || val.includes("apa")) {
         azulSprite.src = "flying-azul-front-facing.png";
         if ((val === "cite" || val === "cite this") && lastResult) {
@@ -240,7 +232,7 @@ async function handleQuery(q) {
         };
     }
 
-    // 3. THE PART YOU ALREADY HAVE: GENERAL SEARCH & COORDS
+    // 3. GENERAL SEARCH
     const data = await searchWiki(val);
     if (data) {
         lastResult = { title: data.title, url: data.url };
@@ -249,7 +241,6 @@ async function handleQuery(q) {
     
     return { text: "No academic record found. Refine query parameters." };
 }
-    
 
 input.addEventListener('keydown', async (e) => {
     if (e.key === 'Enter') {
@@ -280,7 +271,6 @@ function showTrivia() {
 
 window.onload = () => typeText("OMNI-AZUL v1.5 ONLINE.");
 </script>
-
 
 
 
