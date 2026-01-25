@@ -178,6 +178,10 @@ if (subject.length < 3) subject = query; // Fallback to full query
 if (query.toLowerCase().includes("feel pain") || query.toLowerCase().includes("jellyfish")) {
     subject = "Nervous system of jellyfish"; 
 }
+// Add this to your context protectors
+if (query.toLowerCase().includes("jellyfish")) {
+    subject = "Jellyfish nervous system"; 
+}
 
 
         // 3. SEARCH WIKIPEDIA
