@@ -6,31 +6,94 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Omni-Azul: Research Partner</title>
   <style>
-    :root { --terminal-green: #00ff41; --glow-color: rgba(0, 255, 65, 0.6); --header-bg: #111; }
-    body, html { margin: 0; padding: 0; height: 100%; background: #050505; font-family: 'Courier New', monospace; color: var(--terminal-green); overflow: hidden; }
-    .loading-hourglass { display: inline-block; animation: flip 1.5s infinite; margin-left: 10px; }
-    @keyframes flip { 0% { transform: rotate(0deg); } 50% { transform: rotate(180deg); } 100% { transform: rotate(180deg); } }
-    @media print {
-      #toolbar, #inputBar, #azulContainer, .btn-ui, #overlay { display: none !important; }
-      body { background: white; color: black; overflow: visible; }
-      #terminal { margin: 0; padding: 0; height: auto; }
-      #output { text-shadow: none; color: black; overflow: visible; }
-    }
-    #toolbar { position: fixed; top: 0; left: 0; width: 100%; height: 50px; background: var(--header-bg); border-bottom: 1px solid var(--terminal-green); display: flex; align-items: center; justify-content: space-between; padding: 0 15px; box-sizing: border-box; z-index: 1500; }
-    #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    #guide { background: #000; border: 2px solid var(--terminal-green); padding: 25px; max-width: 400px; box-shadow: 0 0 15px var(--glow-color); }
-    #terminal { position: relative; width: 100%; height: calc(100dvh - 50px); margin-top: 50px; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; }
-    #output { flex-grow: 1; white-space: pre-wrap; line-height: 1.5em; overflow-y: auto; margin-bottom: 100px; text-shadow: 0 0 5px var(--glow-color); }
-    #inputBar { position: fixed; bottom: 0; left: 0; width: 100%; padding: 15px 15px calc(15px + env(safe-area-inset-bottom)) 15px; background: rgba(0,0,0,0.95); border-top: 1px solid var(--terminal-green); z-index: 100; box-sizing: border-box; display: flex; align-items: center; }
-    #userInput { flex-grow: 1; background: transparent; border: none; color: var(--terminal-green); font-family: inherit; font-size: 1rem; outline: none; }
-    .btn-ui { background: var(--terminal-green); color: black; border: none; padding: 5px 10px; font-weight: bold; cursor: pointer; border-radius: 3px; font-size: 0.8rem; }
-    #azulContainer { position: fixed; bottom: 80px; right: 20px; width: 110px; z-index: 20; pointer-events: none; }
-    #azulSprite { width: 100%; filter: drop-shadow(0 0 10px var(--glow-color)); }
-    .bobbing { animation: bob 3s ease-in-out infinite; }
-    @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-    a { color: #fff; text-decoration: underline; }
-    .fact-text { color: #ffb000; text-shadow: 0 0 8px rgba(255, 176, 0, 0.7); border-left: 2px solid #ffb000; padding-left: 10px; margin: 10px 0; }
-  </style>
+  :root { 
+    --terminal-green: #00ff41; 
+    --glow-color: rgba(0, 255, 65, 0.6); 
+    --header-bg: #111; 
+  }
+
+  body, html { 
+    margin: 0; 
+    padding: 0; 
+    height: 100%; 
+    width: 100%; /* Explicitly set width */
+    background: #050505; 
+    font-family: 'Courier New', monospace; 
+    color: var(--terminal-green); 
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    position: fixed; /* Helps prevent iPhone "rubber-banding" */
+  }
+
+  /* Ensure the terminal doesn't overflow */
+  #terminal { 
+    position: relative; 
+    width: 100vw; 
+    max-width: 100%; 
+    height: calc(100dvh - 50px); 
+    margin-top: 50px; 
+    padding: 15px; 
+    box-sizing: border-box; 
+    display: flex; 
+    flex-direction: column; 
+    overflow: hidden;
+  }
+
+  #output { 
+    flex-grow: 1; 
+    white-space: pre-wrap; 
+    line-height: 1.4em; 
+    overflow-y: auto; 
+    margin-bottom: 80px; 
+    word-break: break-word; /* Forces long text to wrap instead of pushing the screen wide */
+    font-size: 14px; /* Slightly smaller for mobile readability */
+  }
+  
+  #inputBar { 
+    position: fixed; 
+    bottom: 0; 
+    left: 0; 
+    width: 100%; 
+    /* Important for iPhone "Notch" and Home Bar */
+    padding: 10px 15px calc(15px + env(safe-area-inset-bottom)) 15px;
+    background: rgba(0,0,0,0.95); 
+    border-top: 1px solid var(--terminal-green); 
+    z-index: 100; 
+    box-sizing: border-box; 
+    display: flex; 
+    align-items: center;
+  }
+
+  #userInput { 
+    flex-grow: 1; 
+    width: 100%; /* Ensure input stays within the bar */
+    background: transparent; 
+    border: none; 
+    color: var(--terminal-green); 
+    font-family: inherit; 
+    font-size: 16px; /* 16px prevents iPhone from zooming in automatically when typing */
+    outline: none; 
+  }
+
+  /* Shrink Azul slightly so he doesn't block the text on small screens */
+  #azulContainer { 
+    position: fixed; 
+    bottom: 100px; 
+    right: 10px; 
+    width: 80px; 
+    z-index: 20; 
+    pointer-events: none; 
+  }
+
+  #guide { 
+    background: #000; 
+    border: 2px solid var(--terminal-green); 
+    padding: 20px; 
+    width: 85%; /* Use percentage instead of max-width for the overlay */
+    max-width: 350px; 
+    box-shadow: 0 0 15px var(--glow-color); 
+  }
+</style>
+
 </head>
 <body>
 
