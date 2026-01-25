@@ -222,12 +222,20 @@ async function handleQuery(q) {
         if (val.includes(slang)) return { text: `TERMINAL ERROR: Low-fidelity terminology. Use '${slangMap[slang]}' for academic indexing.`, geo: "LOGIC_GATE" };
     }
 
-    // 3. REFINED SEARCH & FETCH
+        // 3. REFINED SEARCH & FETCH
     let refined = val;
-    const scienceTriggers = ["moon", "mercury", "lead", "shell", "cell"];
+    const scienceTriggers = ["moon", "mercury", "lead", "shell"]; // Removed 'cell' to prevent Neuropathy hijacking
+    
+    // Only append science terms if the query isn't already specific
     if (scienceTriggers.some(t => val.includes(t)) && !val.includes("music") && !val.includes("band")) {
         refined += " science geology astronomy"; 
     }
+
+    // NEW: If the query is a specific biological question, keep it clean
+    if (val.includes("do ") || val.includes("why ") || val.includes("jellyfish")) {
+        refined = val; 
+    }
+
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
