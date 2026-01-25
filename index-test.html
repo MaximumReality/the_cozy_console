@@ -49,13 +49,12 @@
     a { color: #fff; text-decoration: underline; }
 
     .fact-text { 
-  color: #ffb000; /* Amber glow for facts */
-  text-shadow: 0 0 8px rgba(255, 176, 0, 0.7);
-  border-left: 2px solid #ffb000;
-  padding-left: 10px;
-  margin: 10px 0;
-}
-
+      color: #ffb000; 
+      text-shadow: 0 0 8px rgba(255, 176, 0, 0.7);
+      border-left: 2px solid #ffb000;
+      padding-left: 10px;
+      margin: 10px 0;
+    }
   </style>
 </head>
 <body>
@@ -81,8 +80,6 @@
   </div>
 </div>
 
-</div>
-
 <div id="terminal">
   <div id="output"></div>
   <div id="inputBar"><span>> </span><input type="text" id="userInput" autofocus autocomplete="off" spellcheck="false"></div>
@@ -93,7 +90,7 @@
 </div>
 
 <script>
-  let sessionLog = []; // This is your digital short-term memory
+let sessionLog = []; 
 
 const azulFacts = [
     "PHYSIOLOGY: Distraction osteogenesis uses mechanical tension to stimulate osteoblastic activity and lengthen bone tissue.",
@@ -113,17 +110,17 @@ const azulFacts = [
     "METEOROLOGY: The Coriolis effect, caused by Earth's rotation, deflects moving air to the right in the Northern Hemisphere."
 ];
 
+const output = document.getElementById('output');
+const input = document.getElementById('userInput');
+const azulSprite = document.getElementById('azulSprite');
 
 async function triggerFact() {
     const randomFact = azulFacts[Math.floor(Math.random() * azulFacts.length)];
-    azulSprite.src = "hover-azul.png"; // Azul looks up the fact
-    
+    azulSprite.src = "hover-azul.png";
     let factContainer = document.createElement("div"); 
     factContainer.className = "fact-text";
     output.appendChild(factContainer);
-    
     let fullText = `[FACT PROTOCOL]: ${randomFact}`;
-    
     for (let char of fullText) {
         factContainer.textContent += char; 
         output.scrollTop = output.scrollHeight;
@@ -131,10 +128,6 @@ async function triggerFact() {
     }
     azulSprite.src = "waiting_azul.png";
 }
-
-const output = document.getElementById('output');
-const input = document.getElementById('userInput');
-const azulSprite = document.getElementById('azulSprite');
 
 function toggleAmber() {
     const root = document.documentElement;
@@ -148,16 +141,13 @@ async function typeText(text, url = null, geo = null) {
     let messageSpan = document.createElement("div"); 
     messageSpan.style.marginBottom = "15px";
     output.appendChild(messageSpan);
-    
     let displayGeo = geo ? `\n\nCOORDINATES: ${geo}` : "";
     let fullText = text + displayGeo;
-    
     for (let char of fullText) {
         messageSpan.textContent += char; 
         output.scrollTop = output.scrollHeight;
         await new Promise(r => setTimeout(r, 12));
     }
-
     if (url) {
         const linkAnchor = document.createElement("a");
         linkAnchor.href = url; linkAnchor.target = "_blank";
@@ -167,27 +157,24 @@ async function typeText(text, url = null, geo = null) {
     azulSprite.src = "waiting_azul.png";
     output.scrollTop = output.scrollHeight;
 }
-  async function showLog() {
+
+async function showLog() {
     azulSprite.src = "idle_azul.png";
     let logContainer = document.createElement("div");
     logContainer.style.border = "1px dashed var(--terminal-green)";
     logContainer.style.padding = "10px";
     logContainer.style.margin = "10px 0";
     output.appendChild(logContainer);
-
     if (sessionLog.length === 0) {
         await typeText("LOG ERROR: No session data found in active RAM.");
         return;
     }
-
     let logText = "--- RECENT ACADEMIC SESSIONS ---\n";
     sessionLog.forEach((entry, i) => {
         logText += `${i + 1}. QUERY: [${entry.query}]\n   CITE: ${entry.citation}\n\n`;
     });
-
     await typeText(logText);
 }
-
 
 async function searchWiki(query, signal) {
     azulSprite.src = "hover-azul.png";
@@ -224,32 +211,22 @@ async function handleQuery(q) {
         if (val.includes(slang)) return { text: `TERMINAL ERROR: Low-fidelity terminology. Use '${slangMap[slang]}' for academic indexing.`, geo: "LOGIC_GATE" };
     }
 
-  
-  // A "Soft Filter" for the Universal Utility
-let refined = val;
-const scienceTriggers = ["moon", "mercury", "lead", "shell", "cell"];
-
-if (scienceTriggers.some(t => val.includes(t)) && !val.includes("music") && !val.includes("band")) {
-    // We gently nudge the API toward the "Whole" systems view
-    refined += " science geology astronomy"; 
-}
-  
-
     // 3. REFINED SEARCH & FETCH
     let refined = val;
+    const scienceTriggers = ["moon", "mercury", "lead", "shell", "cell"];
+    if (scienceTriggers.some(t => val.includes(t)) && !val.includes("music") && !val.includes("band")) {
+        refined += " science geology astronomy"; 
+    }
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
-
-
-    const data = await searchWiki(refined, controller.signal); // DATA IS DEFINED HERE
+    const data = await searchWiki(refined, controller.signal);
     clearTimeout(timeout);
 
     if (data) {
-        // --- MEMORY LOGIC MOVED HERE ---
         const citation = `(${data.title}, 2026). Retrieved from Omni-Azul Academic Archive.`;
         sessionLog.unshift({ query: val, citation: citation }); 
         if (sessionLog.length > 5) sessionLog.pop();
-        // -------------------------------
 
         let prefix = (val.includes("ethic") || val.includes("wrong") || val.includes("moral")) ? 
             `ETHICAL PROTOCOL: Regarding '${data.title}', science defines the 'how,' ethics questions the 'why.'\n\n` : "";
@@ -267,11 +244,9 @@ input.addEventListener('keydown', async (e) => {
         line.style.color = "white";
         line.textContent = `> ${val}`;
         output.appendChild(line);
-        
         const loadingLine = document.createElement("div");
         loadingLine.innerHTML = `AZUL: SEARCHING ARCHIVES... <span class="loading-hourglass">⌛</span>`;
         output.appendChild(loadingLine);
-        
         const res = await handleQuery(val);
         output.removeChild(loadingLine);
         await typeText(`AZUL: ${res.text}`, res.url, res.geo);
