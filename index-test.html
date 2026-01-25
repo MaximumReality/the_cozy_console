@@ -64,7 +64,7 @@
 
 <div id="overlay">
   <div id="guide">
-    <h2 style="margin-top:0; color:white;">OMNI-AZUL v2.3</h2
+    <h2 style="margin-top:0; color:white;">OMNI-AZUL v2.4</h2
     <p>• <strong>SEARCH:</strong> Distraction-free academic data.</p>
     <p>• <strong>SAFE-AREA:</strong> Optimized for mobile terminals.</p>
     <p>• <strong>SUBJECT LOCK:</strong> Context-aware research.</p>
@@ -240,6 +240,19 @@ if (bioTerms.some(t => anchor.includes(t))) {
 if (anchor.includes("cheese")) searchSubject = "Cheese making process -moon";
 if (anchor.includes("feline")) searchSubject = "Cat senses vision -fictional";
 
+  // Add a timeout to the fetch so it doesn't hang forever
+const controller = new AbortController();
+const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 sec limit
+
+try {
+    const res = await fetch(searchUrl, { signal: controller.signal });
+    // ... rest of search logic
+} catch (e) {
+    return { text: "SEARCH TIMEOUT: Query too broad. Use precise terms like 'Crustacean sentience'." };
+} finally {
+    clearTimeout(timeoutId);
+}
+
     const data = await searchWiki(refinedQuery);
     
     if (data) {
@@ -280,7 +293,7 @@ input.addEventListener('keydown', async (e) => {
     }
 });
 
-window.onload = () => typeText("OMNI-AZUL v2.3 ONLINE. SUBJECT LOCK ACTIVE.");
+window.onload = () => typeText("OMNI-AZUL v2.4 ONLINE. SUBJECT LOCK ACTIVE.");
 </script>
 
 </body>
