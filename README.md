@@ -54,6 +54,12 @@ Omni-Azul is a **Progressive Web App (PWA)**. For the best experience on iPhone:
 ## 🌐 Part of the Maximum Reality Network
 Omni-Azul is a specialized module of the **[Maximum Reality](https://maximumreality.xyz)** ecosystem, dedicated to the pursuit of knowledge, digital efficiency, and the exploration of the megadiverse world.
 
+## 🧠 Developer Notes: The "Whole" Perspective
+Omni-Azul was built on an iPhone 14 Pro Max, marking a return to HTML/JS after a 25-year "system sleep." 
+
+This interface reflects a "Systems Thinking" philosophy—stripping away the fragmented, disconnected UI of the modern web to provide a direct "Root Access" to information. It is designed for those who process the world not in parts, but as an interconnected whole. Every line of code is a public commit, documenting the journey of a human processor navigating the gap between legacy memory and modern syntax.
+
+
 ---
 © 2026 Maximum Reality. System Status: **Online**.
 
