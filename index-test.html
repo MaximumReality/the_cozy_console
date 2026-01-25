@@ -76,15 +76,8 @@
     <button class="btn-ui" onclick="toggleAmber()">AMBER</button>
     <button class="btn-ui" onclick="output.textContent=''; typeText('TERMINAL PURGED...')">🗑️</button>
     <button class="btn-ui" onclick="window.print()">🖨️</button>
-  <div style="display:flex; gap:8px;">
     <button class="btn-ui" onclick="triggerFact()">FACT</button>
     <button class="btn-ui" onclick="showLog()">📝</button> <button class="btn-ui" onclick="toggleAmber()">AMBER</button>
-    <button class="btn-ui" onclick="output.textContent=''; typeText('TERMINAL PURGED...')">🗑️</button>
-    <button class="btn-ui" onclick="window.print()">🖨️</button>
-</div>
-
-    
-
   </div>
 </div>
 
@@ -209,11 +202,6 @@ async function handleQuery(q) {
         try {
             let mathQuery = val.replace("square root of", "Math.sqrt(").replace("square root", "Math.sqrt");
             if (mathQuery.includes("Math.sqrt") && !mathQuery.includes(")")) mathQuery += ")";
-            if (val.includes("rms of")) {
-                let nums = val.match(/\d+/g).map(Number);
-                let rms = Math.sqrt(nums.map(x => x * x).reduce((a, b) => a + b) / nums.length);
-                return { text: `MATHEMATICAL PRECISION: RMS of ${nums} = ${rms.toFixed(4)}`, geo: "MATH_CORE" };
-            }
             return { text: `MATHEMATICAL PRECISION: ${val} = ${eval(mathQuery.replace('x', '*'))}`, geo: "MATH_CORE" };
         } catch (e) {}
     }
@@ -224,29 +212,21 @@ async function handleQuery(q) {
         if (val.includes(slang)) return { text: `TERMINAL ERROR: Low-fidelity terminology. Use '${slangMap[slang]}' for academic indexing.`, geo: "LOGIC_GATE" };
     }
 
-    // 3. REFINED SEARCH & TIMEOUT
+    // 3. REFINED SEARCH & FETCH
     let refined = val;
-    if (["pain", "feel", "intelligent", "eat", "sweat"].some(t => val.includes(t))) refined += " biology physiology -fiction";
-    if (val.includes("saragossa") || val.includes("sargasso")) refined = "Sargasso Sea";
-    if (val === "lead") refined = "Lead (element)";
-
-  // Inside handleQuery, after 'data' is found:
-if (data) {
-    const citation = `(${data.title}, 2026). Retrieved from Omni-Azul Academic Archive.`;
-    sessionLog.unshift({ query: val, citation: citation }); // Add to start
-    if (sessionLog.length > 5) sessionLog.pop(); // Keep only last 5
-}
-
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
 
-    const data = await searchWiki(refined, controller.signal);
+    const data = await searchWiki(refined, controller.signal); // DATA IS DEFINED HERE
     clearTimeout(timeout);
 
     if (data) {
-        if (data.title.toLowerCase().includes("film") && !val.includes("movie")) {
-             return { text: "TERMINAL ERROR: Academic mismatch. Use precise terminology (e.g. 'Octopi physiology') to bypass cultural noise." };
-        }
+        // --- MEMORY LOGIC MOVED HERE ---
+        const citation = `(${data.title}, 2026). Retrieved from Omni-Azul Academic Archive.`;
+        sessionLog.unshift({ query: val, citation: citation }); 
+        if (sessionLog.length > 5) sessionLog.pop();
+        // -------------------------------
+
         let prefix = (val.includes("ethic") || val.includes("wrong") || val.includes("moral")) ? 
             `ETHICAL PROTOCOL: Regarding '${data.title}', science defines the 'how,' ethics questions the 'why.'\n\n` : "";
         return { text: prefix + data.extract, url: data.url, geo: data.geo };
