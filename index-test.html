@@ -155,31 +155,26 @@ async function showLog() {
 async function searchWiki(query, signal) {
     azulSprite.src = "hover-azul.png";
     try {
-        // We add 'intitle:' to the first word of the query to pin the subject
-        const subject = query.split(" ")[0];
-        const preciseQuery = `intitle:${subject} ${query}`;
-        
-        const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(preciseQuery)}&gsrlimit=1&prop=extracts|coordinates&exintro&explaintext&format=json&origin=*`;
+        // STEP 1: Identify the main subject (the first noun or the first word)
+        // We trim common question words to find the "heart" of the query
+        let subject = query.replace(/do|does|why|how|the|a|an/gi, "").trim().split(" ")[0];
+
+        // STEP 2: Use a "Search" that prioritizes the subject in the title
+        const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(subject)}&gsrlimit=1&prop=extracts|coordinates&exintro&explaintext&format=json&origin=*`;
         
         const res = await fetch(searchUrl, { signal });
         const data = await res.json();
         
-        if (!data.query) {
-            // Fallback to standard search if intitle is too restrictive
-            const fallbackUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=1&prop=extracts|coordinates&exintro&explaintext&format=json&origin=*`;
-            const fallbackRes = await fetch(fallbackUrl, { signal });
-            const fallbackData = await fallbackRes.json();
-            if (!fallbackData.query) return null;
-            const fallbackPage = Object.values(fallbackData.query.pages)[0];
-            return {
-                title: fallbackPage.title,
-                extract: fallbackPage.extract,
-                url: `https://en.wikipedia.org/?curid=${fallbackPage.pageid}`,
-                geo: fallbackPage.coordinates ? `${fallbackPage.coordinates[0].lat.toFixed(4)}°N, ${fallbackPage.coordinates[0].lon.toFixed(4)}°W` : null
-            };
-        }
+        if (!data.query) return null;
 
         const page = Object.values(data.query.pages)[0];
+        
+        // STEP 3: Safety Check
+        // If the result title doesn't contain our subject, it's likely a "Simpsons" style error
+        if (!page.title.toLowerCase().includes(subject.toLowerCase())) {
+             return { text: "Search focus lost. Please specify the subject more clearly (e.g., 'Jellyfish Biology')." };
+        }
+
         return {
             title: page.title,
             extract: page.extract,
@@ -188,6 +183,7 @@ async function searchWiki(query, signal) {
         };
     } catch (e) { return null; }
 }
+
 
 async function handleQuery(q) {
     let val = q.toLowerCase().trim();
