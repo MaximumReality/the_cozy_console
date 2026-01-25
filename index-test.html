@@ -13,7 +13,6 @@
         color: var(--terminal-green); overflow: hidden; position: fixed; 
     }
 
-    /* FIX: Boot screen box sizing and visibility */
     #overlay { 
         position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
         background: black; z-index: 9999; 
@@ -28,7 +27,8 @@
     #toolbar { 
         position: fixed; top: 0; left: 0; width: 100%; height: 50px; 
         background: #111; border-bottom: 1px solid var(--terminal-green); 
-        display: flex; align-items: center; justify-content: space-around; z-index: 1000; 
+        display: flex; align-items: center; justify-content: space-between; 
+        padding: 0 10px; z-index: 1000; box-sizing: border-box;
     }
 
     #terminal { 
@@ -37,8 +37,9 @@
     }
 
     #output { 
-        height: 70%; overflow-y: auto; white-space: pre-wrap; 
+        height: 75%; overflow-y: auto; white-space: pre-wrap; 
         word-wrap: break-word; font-size: 14px; line-height: 1.4;
+        text-shadow: 0 0 5px var(--glow-color);
     }
     
     #inputBar { 
@@ -55,12 +56,20 @@
 
     #azulContainer { 
         position: fixed; bottom: 100px; right: 20px; width: 90px; z-index: 20; 
+        pointer-events: none;
     }
     #azulSprite { width: 100%; filter: drop-shadow(0 0 5px var(--glow-color)); }
 
-    .btn-ui { background: var(--terminal-green); color: black; border: none; padding: 4px 8px; font-weight: bold; font-size: 12px; border-radius: 3px; }
+    .btn-ui { background: var(--terminal-green); color: black; border: none; padding: 5px 8px; font-weight: bold; font-size: 12px; border-radius: 3px; cursor: pointer; }
     .bobbing { animation: bob 3s ease-in-out infinite; }
     @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    
+    @media print {
+      #toolbar, #inputBar, #azulContainer, #overlay { display: none !important; }
+      body { background: white; color: black; position: static; overflow: visible; }
+      #terminal { margin: 0; height: auto; }
+      #output { color: black; text-shadow: none; overflow: visible; }
+    }
   </style>
 </head>
 <body>
@@ -70,14 +79,18 @@
     <h2 style="color:white; margin-top:0;">OMNI-AZUL v2.5</h2>
     <p>• SEARCH: Academic Logic</p>
     <p>• FACT: STEAM Data</p>
+    <p>• LOG: Session Records</p>
     <button class="btn-ui" style="width:100%; padding:10px;" onclick="document.getElementById('overlay').style.display='none'">BOOT SYSTEM</button>
   </div>
 </div>
 
 <div id="toolbar">
+  <a href="https://maximumreality.xyz" style="text-decoration:none;"><button class="btn-ui">🏠</button></a>
   <button class="btn-ui" onclick="triggerFact()">FACT</button>
+  <button class="btn-ui" onclick="showLog()">📝</button>
   <button class="btn-ui" onclick="toggleAmber()">AMBER</button>
-  <button class="btn-ui" onclick="output.innerHTML=''">CLEAR</button>
+  <button class="btn-ui" onclick="window.print()">🖨️</button>
+  <button class="btn-ui" onclick="output.innerHTML=''; typeText('TERMINAL PURGED...')">🗑️</button>
 </div>
 
 <div id="terminal">
@@ -91,6 +104,7 @@
 
 <script>
 let lastResult = null;
+let sessionLog = [];
 const output = document.getElementById('output');
 const input = document.getElementById('userInput');
 const azulSprite = document.getElementById('azulSprite');
@@ -98,7 +112,7 @@ const azulSprite = document.getElementById('azulSprite');
 async function typeText(text, url = null) {
     azulSprite.src = "idle_azul.png";
     let div = document.createElement("div");
-    div.style.marginBottom = "10px";
+    div.style.marginBottom = "15px";
     output.appendChild(div);
     for (let char of text) {
         div.textContent += char;
@@ -127,8 +141,21 @@ async function searchWiki(query) {
 }
 
 async function triggerFact() {
-    const facts = ["ASTRONOMY: The Sargasso Sea is the only sea without land boundaries.", "PHYSICS: Light travels at 299,792,458 m/s."];
+    const facts = [
+        "PHYSIOLOGY: Distraction osteogenesis uses mechanical tension to stimulate bone growth.",
+        "ASTRONOMY: The Sargasso Sea is defined by ocean currents, not land.",
+        "PHYSICS: The speed of light is exactly 299,792,458 meters per second.",
+        "NEUROLOGY: The brain forms an estimated 100 trillion synaptic connections."
+    ];
     await typeText("FACT: " + facts[Math.floor(Math.random()*facts.length)]);
+}
+
+async function showLog() {
+    if (sessionLog.length === 0) {
+        await typeText("LOG ERROR: No records found.");
+    } else {
+        await typeText("--- SESSION LOG ---\n" + sessionLog.join("\n"));
+    }
 }
 
 function toggleAmber() {
@@ -140,7 +167,9 @@ input.addEventListener('keydown', async (e) => {
     if (e.key === 'Enter') {
         let val = input.value.toLowerCase().trim();
         input.value = "";
-        output.innerHTML += `<div style="color:white">> ${val}</div>`;
+        if (!val) return;
+        
+        output.innerHTML += `<div style="color:white; margin-bottom: 5px;">> ${val}</div>`;
 
         // CITATION PROTOCOL
         if (val.includes("cite") || val.includes("mla") || val.includes("apa")) {
@@ -156,6 +185,8 @@ input.addEventListener('keydown', async (e) => {
         let data = await searchWiki(val);
         if (data) {
             lastResult = data;
+            sessionLog.unshift(`[${data.title}] - ${data.url}`);
+            if (sessionLog.length > 5) sessionLog.pop();
             await typeText(data.extract, data.url);
         } else {
             await typeText("No records found.");
