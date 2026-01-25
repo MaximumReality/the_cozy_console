@@ -172,16 +172,38 @@ async function searchWiki(query, signal) {
 async function handleQuery(q) {
     let val = q.toLowerCase().trim();
 
-    // --- CITATION PROTOCOL ---
-    if (val.includes("cite") || val.includes("citation") || val.includes("mla") || val.includes("apa")) {
+        // --- EXPANDED CITATION PROTOCOL ---
+    if (val.includes("cite") || val.includes("citation") || val.includes("mla") || val.includes("apa") || val.includes("chicago")) {
         azulSprite.src = "flying-azul-front-facing.png";
+
+        // Check for specific style requests to provide direct links
+        let citationLink = "https://owl.purdue.edu/owl/research_and_citation/resources.html";
+        let styleName = "General";
+
+        if (val.includes("apa")) {
+            citationLink = "https://owl.purdue.edu/owl/research_and_citation/apa_style/apa_formatting_and_style_guide/general_format.html";
+            styleName = "APA";
+        } else if (val.includes("chicago")) {
+            citationLink = "https://owl.purdue.edu/owl/research_and_citation/chicago_manual_17th_edition/cmos_formatting_and_style_guide/general_format.html";
+            styleName = "Chicago";
+        } else if (val.includes("mla")) {
+            citationLink = "https://owl.purdue.edu/owl/research_and_citation/mla_style/mla_formatting_and_style_guide/mla_general_format.html";
+            styleName = "MLA";
+        }
+
+        // Logic for "Cite This" (using the last search result)
         if ((val === "cite" || val === "cite this") && lastResult) {
             const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-            return { text: `MLA CITATION:\n"${lastResult.title}." Wikipedia, ${date}, ${lastResult.url}.`, url: lastResult.url };
+            return { 
+                text: `MLA CITATION (AUTO-GEN):\n"${lastResult.title}." Wikipedia, ${date}, ${lastResult.url}.`, 
+                url: lastResult.url 
+            };
         }
+
+        // Default or specific style guidance
         return { 
-            text: "CITATION PROTOCOL: Refer to the Purdue Online Writing Lab (OWL) for gold-standard MLA, APA, and Chicago formatting.", 
-            url: "https://owl.purdue.edu/owl/research_and_citation/resources.html" 
+            text: `CITATION PROTOCOL: Redirecting to Purdue OWL ${styleName} formatting standards.`, 
+            url: citationLink 
         };
     }
 
