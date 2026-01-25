@@ -193,88 +193,51 @@ if (val.includes("sweat") && val.includes("pig")) {
 
 async function handleQuery(q) {
     let val = q.toLowerCase().trim();
-    if (!val) return { text: "SYSTEM IDLE: Awaiting input..." };
-
-    // 1. SAFE MATH CORE
-    const isMath = /^[0-9+\-*/x().\s]+$/.test(val.replace('x', '*'));
-    const isSqrt = val.includes("square root");
     
-    if (isMath || isSqrt) {
+    // 1. DISCIPLINE CHECK: Math always wins
+    if (/^[0-9x+/\-*\s()]+$/.test(val.replace('x','*'))) {
         try {
-            let mathExpr = val.replace(/x/g, '*').replace(/square root of /g, 'Math.sqrt(');
-            if (isSqrt && !mathExpr.includes(')')) mathExpr += ')';
-            
-            if (val.includes("rms")) {
-                let nums = val.match(/\d+/g).map(Number);
-                if (nums.length > 0) {
-                    let rms = Math.sqrt(nums.reduce((a, b) => a + (b * b), 0) / nums.length);
-                    return { text: `MATHEMATICAL PRECISION: RMS of [${nums}] = ${rms.toFixed(4)}`, geo: "MATH_NODE" };
-                }
-            }
-
-            const result = eval(mathExpr);
-            return { text: `MATHEMATICAL PRECISION: ${val} = ${result}`, geo: "MATH_NODE" };
-        } catch (e) { }
+            let result = eval(val.replace('x', '*'));
+            return { text: `CALCULATION: ${val} = ${result}`, geo: "MATH_NODE" };
+        } catch (e) {}
     }
 
-    // 2. SEARCH ANCHORING
-    let refinedQuery = val;
-    if (val === "lead" || val.includes("consume lead")) refinedQuery = "Lead poisoning";
-    if (val.includes("octopus") || val.includes("octopi")) refinedQuery = "Octopus intelligence ethics";
-    if (val.includes("dog") && val.includes("pain")) refinedQuery = "Pain in animals";
-// REFINEMENT: The "Anti-Fable" & "Process" Filter
-let anchor = query.toLowerCase().trim();
+    // 2. TERMINOLOGY GATE: Demand better nouns
+    const slangMap = { 'cats': 'felines', 'dogs': 'canines', 'octopus': 'octopi' };
+    for (let slang in slangMap) {
+        if (val.includes(slang)) {
+            return { text: `TERMINAL ERROR: Low-fidelity terminology. Please use '${slangMap[slang]}' for academic indexing.`, geo: "LOGIC_GATE" };
+        }
+    }
 
-// If asking "How", force a process/manufacturing search
-if (anchor.startsWith("how is") || anchor.startsWith("how to")) {
-    searchSubject = anchor + " process production -fable -myth";
-}
+    // 3. SEARCH WITH ABORT SIGNAL (Stops the ⌛ hang)
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), 5000);
 
-// If asking about animal traits, force biology
-const bioTerms = ["sweat", "see", "vision", "pain", "eat", "diet"];
-if (bioTerms.some(t => anchor.includes(t))) {
-    searchSubject = anchor + " biology physiology -fictional -list";
-}
-
-// Specific override for the "Cheese" and "Feline" drift
-if (anchor.includes("cheese")) searchSubject = "Cheese making process -moon";
-if (anchor.includes("feline")) searchSubject = "Cat senses vision -fictional";
-
-  // Add a timeout to the fetch so it doesn't hang forever
-const controller = new AbortController();
-const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 sec limit
-
-try {
-    const res = await fetch(searchUrl, { signal: controller.signal });
-    // ... rest of search logic
-} catch (e) {
-    return { text: "SEARCH TIMEOUT: Query too broad. Use precise terms like 'Crustacean sentience'." };
-} finally {
-    clearTimeout(timeoutId);
-}
-
-    const data = await searchWiki(refinedQuery);
-    
-    if (data) {
-        const noise = ["film", "movie", "band", "album", "song"];
-        const isNoise = noise.some(n => data.title.toLowerCase().includes(n));
-        const userAskedForArt = ["film", "movie", "music", "actor"].some(n => val.includes(n));
-
-        if (isNoise && !userAskedForArt) {
-            return { text: `TERMINAL ERROR: Low-fidelity match [${data.title}]. \n\nADVICE: Use precise biological or chemical terminology to bypass cultural noise.`, geo: "LOGIC_GATE" };
+    try {
+        let refined = val;
+        // Biology Booster
+        if (["pain", "feel", "intelligent", "eat"].some(t => val.includes(t))) {
+            refined += " biology physiology -fiction -movie";
         }
 
-        let prefix = (val.includes("ethic") || val.includes("moral")) ? 
-            `ETHICAL PROTOCOL: Regarding '${data.title}', science defines the 'how,' ethics questions the 'why.'\n\n` : "";
+        const data = await searchWiki(refined, controller.signal);
+        clearTimeout(id);
 
-        return { text: prefix + data.extract, url: data.url, geo: data.geo };
+        if (data) {
+            let prefix = (val.includes("ethic") || val.includes("wrong")) ? 
+                `ETHICAL PROTOCOL: Regarding '${data.title}', science defines the 'how,' ethics questions the 'why.'\n\n` : "";
+            return { text: prefix + data.extract, url: data.url, geo: data.geo };
+        }
+    } catch (e) {
+        return { text: "SEARCH TIMEOUT: Query too complex or disconnected. Refine parameters.", geo: "TIMEOUT_ERR" };
     }
-
-    return { text: "TERMINAL ERROR: No academic record found. Check syntax and terminology.", geo: "VOID_NODE" };
+    
+    return { text: "No academic record found. Check spelling or precision.", geo: "NULL_REC" };
 }
 
 input.addEventListener('keydown', async (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter') {h
         const val = input.value;
         if (!val) return;
         input.value = "";
