@@ -159,11 +159,25 @@ async function searchWiki(query) {
 
 async function triggerFact() {
     const facts = [
-        "PHYSIOLOGY: Distraction osteogenesis uses mechanical tension to stimulate bone growth.",
-        "ASTRONOMY: The Sargasso Sea is defined by ocean currents, not land.",
-        "PHYSICS: The speed of light is exactly 299,792,458 meters per second.",
-        "GEOLOGY: The movement of tectonic plates is driven by mantle convection."
-    ];
+        
+    "OCEANOGRAPHY: The Sargasso Sea is defined by ocean currents, not land.",
+    "PHYSICS: The speed of light is exactly 299,792,458 meters per second.",
+    "PHYSIOLOGY: Distraction osteogenesis uses mechanical tension to stimulate osteoblastic activity and lengthen bone tissue.",
+    "QUANTUM: Entanglement occurs when particles become linked such that the state of one instantaneously influences the other regardless of distance.",
+    "ASTRONOMY: The observable universe contains an estimated 2 trillion galaxies, each containing billions of stellar systems.",
+    "NEUROLOGY: The human brain contains approximately 86 billion neurons, forming an estimated 100 trillion synaptic connections.",
+    "BOTANY: Mycelial networks facilitate nutrient and information exchange between disparate plant species via a subterranean 'wood wide web'.",
+    "PHYSICS: The Chandrasekhar limit (1.4 solar masses) determines the maximum mass of a stable white dwarf star before gravitational collapse.",
+    "BIOCHEMISTRY: ATP (Adenosine triphosphate) serves as the primary energy currency for all cellular metabolic processes.",
+    "GEOLOGY: The movement of tectonic plates is driven by mantle convection currents and the gravitational pull of subducting slabs.",
+    "MATHEMATICS: The Golden Ratio (Phi ≈ 1.618) describes logarithmic spirals found in phyllotaxis and galactic structures.",
+    "THERMODYNAMICS: The Second Law states that the total entropy of an isolated system can never decrease over time.",
+    "COMPUTING: Bit depth determines the number of possible values that can be represented in a digital signal.",
+    "OPTICS: The speed of light in a vacuum is exactly 299,792,458 meters per second.",
+    "GENETICS: DNA is composed of four nucleotide bases: adenine (A), cytosine (C), guanine (G), and thymine (T).",
+    "CHEMISTRY: The periodic table currently consists of 118 confirmed chemical elements.",
+    "METEOROLOGY: The Coriolis effect, caused by Earth's rotation, deflects moving air to the right in the Northern Hemisphere."
+];
     await typeText("FACT: " + facts[Math.floor(Math.random()*facts.length)]);
 }
 
