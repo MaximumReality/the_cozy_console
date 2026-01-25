@@ -220,6 +220,20 @@ async function handleQuery(q) {
 
     return { text: "TERMINAL ERROR: No academic record found. Check syntax and terminology.", geo: "VOID_NODE" };
 }
+  // REFINEMENT: Force Wikipedia to ignore Fiction/Movies and focus on Biology
+let anchor = query.toLowerCase();
+
+// If the query is about animals or biology, add specific anchors
+const bioTriggers = ["eat", "sweat", "brain", "nerve", "pain", "intelligent"];
+if (bioTriggers.some(t => anchor.includes(t))) {
+    anchor += " biology -novel -film -book";
+}
+
+// Specific fix for the Sargasso Sea
+if (anchor.includes("saragossa") || anchor.includes("sargasso")) {
+    anchor = "Sargasso Sea -saint";
+}
+
 
 input.addEventListener('keydown', async (e) => {
     if (e.key === 'Enter') {
