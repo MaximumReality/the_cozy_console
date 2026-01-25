@@ -185,8 +185,7 @@ async function handleQuery(q) {
 
             let result = eval(mathQuery.replace('x', '*'));
             return { text: `MATHEMATICAL PRECISION: ${val} = ${result}`, geo: "MATH_CORE" };
-        } catch (e) { /* fall through to search if math fails */ }
-    }
+        } catch (e) { /* fall through to search if math 
 
     // 2. SEARCH WITH DISCIPLINE (Fixes the Lead/Musician glitch)
     // We add "Chemical Element" or "Biology" to specific triggers
