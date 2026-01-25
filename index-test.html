@@ -134,10 +134,21 @@ async function typeText(text, url = null, geo = null) {
 async function searchWiki(query) {
     azulSprite.src = "hover-azul.png";
     try {
-        // 1. ANCHORING: We force the search to find the core subject first
-        let searchSubject = query.toLowerCase().trim();
+        let val = query.toLowerCase().trim();
+        let searchSubject = val;
+
+        // 1. FIDELITY ANCHORS: Prevent "Oldboy" or "Saint" drift
+        const bioTriggers = ["eat", "sweat", "brain", "nerve", "pain", "intelligent", "consume"];
+        if (bioTriggers.some(t => val.includes(t))) {
+            searchSubject += " biology physiology -novel -film -book";
+        }
         
-        // 2. RELEVANCY BOOST: We use 'gsrsearch' to target the actual page title
+        // Specific fix for the Sargasso / Saragossa confusion
+        if (val.includes("saragossa") || val.includes("sargasso")) {
+            searchSubject = "Sargasso Sea -saint -vincent";
+        }
+
+        // 2. SEARCH: Use 'generator' for higher quality primary matches
         const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(searchSubject)}&gsrlimit=1&prop=extracts|pageimages|coordinates&exintro&explaintext&format=json&origin=*`;
         
         const res = await fetch(searchUrl);
@@ -147,8 +158,6 @@ async function searchWiki(query) {
             const pageId = Object.keys(data.query.pages)[0];
             const page = data.query.pages[pageId];
 
-            // 3. QUALITY CHECK: Does the result title actually relate to the query?
-            // If you ask for 'Lead' and get 'Water', we should flag it.
             let coords = null;
             if (page.coordinates) {
                 coords = `${page.coordinates[0].lat.toFixed(4)}°N, ${page.coordinates[0].lon.toFixed(4)}°W`;
@@ -164,6 +173,7 @@ async function searchWiki(query) {
     } catch (e) { return null; }
     return null;
 }
+
 
 
 
