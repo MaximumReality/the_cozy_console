@@ -94,6 +94,7 @@
 
 <script>
 let sessionLog = []; 
+let lastResult = null; // Moved to the top for global access 
 
 const azulFacts = [
     "PHYSIOLOGY: Distraction osteogenesis uses mechanical tension to stimulate osteoblastic activity and lengthen bone tissue.",
@@ -199,6 +200,31 @@ async function searchWiki(query, signal) {
 async function handleQuery(q) {
     let val = q.toLowerCase().trim();
 
+    // --- START OF CITATION PROTOCOL ---
+    if (val.includes("cite") || val.includes("citation") || val.includes("mla") || val.includes("apa")) {
+        azulSprite.src = "flying-azul-front-facing.png";
+
+        if ((val === "cite" || val === "cite this") && lastResult) {
+            const date = new Date().toLocaleDateString('en-GB', {
+                day: 'numeric', month: 'short', year: 'numeric'
+            });
+            return {
+                text: `MLA CITATION:\n"${lastResult.title}." Wikipedia, ${date}, ${lastResult.url}.`,
+                url: lastResult.url
+            };
+        }
+
+        if (!lastResult && (val === "cite" || val === "cite this")) {
+            return { text: "CITATION ERROR: No prior source in active memory." };
+        }
+
+        return {
+            text: "CITATION PROTOCOL: Refer to the Purdue Online Writing Lab (OWL) for gold-standard MLA, APA, and Chicago formatting.",
+            url: "https://owl.purdue.edu/owl/research_and_citation/resources.html"
+        };
+    }
+    // --- END OF CITATION PROTOCOL ---
+
     // 1. LOCAL MATH CORE
     if (val.includes("square root") || val.includes("rms") || /^[0-9x+/\-*\s()]+$/.test(val.replace('x','*'))) {
         try {
@@ -227,6 +253,9 @@ async function handleQuery(q) {
     clearTimeout(timeout);
 
     if (data) {
+        // SAVE FOR CITATION PROTOCOL
+        lastResult = data; 
+
         const citation = `(${data.title}, 2026). Retrieved from Omni-Azul Academic Archive.`;
         sessionLog.unshift({ query: val, citation: citation }); 
         if (sessionLog.length > 5) sessionLog.pop();
