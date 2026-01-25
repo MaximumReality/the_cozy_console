@@ -64,7 +64,7 @@
 
 <div id="overlay">
   <div id="guide">
-    <h2 style="margin-top:0; color:white;">OMNI-AZUL v2.2</h2
+    <h2 style="margin-top:0; color:white;">OMNI-AZUL v2.3</h2
     <p>• <strong>SEARCH:</strong> Distraction-free academic data.</p>
     <p>• <strong>SAFE-AREA:</strong> Optimized for mobile terminals.</p>
     <p>• <strong>SUBJECT LOCK:</strong> Context-aware research.</p>
@@ -222,6 +222,23 @@ async function handleQuery(q) {
     if (val === "lead" || val.includes("consume lead")) refinedQuery = "Lead poisoning";
     if (val.includes("octopus") || val.includes("octopi")) refinedQuery = "Octopus intelligence ethics";
     if (val.includes("dog") && val.includes("pain")) refinedQuery = "Pain in animals";
+// REFINEMENT: The "Anti-Fable" & "Process" Filter
+let anchor = query.toLowerCase().trim();
+
+// If asking "How", force a process/manufacturing search
+if (anchor.startsWith("how is") || anchor.startsWith("how to")) {
+    searchSubject = anchor + " process production -fable -myth";
+}
+
+// If asking about animal traits, force biology
+const bioTerms = ["sweat", "see", "vision", "pain", "eat", "diet"];
+if (bioTerms.some(t => anchor.includes(t))) {
+    searchSubject = anchor + " biology physiology -fictional -list";
+}
+
+// Specific override for the "Cheese" and "Feline" drift
+if (anchor.includes("cheese")) searchSubject = "Cheese making process -moon";
+if (anchor.includes("feline")) searchSubject = "Cat senses vision -fictional";
 
     const data = await searchWiki(refinedQuery);
     
@@ -263,7 +280,7 @@ input.addEventListener('keydown', async (e) => {
     }
 });
 
-window.onload = () => typeText("OMNI-AZUL v2.2 ONLINE. SUBJECT LOCK ACTIVE.");
+window.onload = () => typeText("OMNI-AZUL v2.3 ONLINE. SUBJECT LOCK ACTIVE.");
 </script>
 
 </body>
