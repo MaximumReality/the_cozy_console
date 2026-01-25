@@ -64,7 +64,7 @@
 
 <div id="overlay">
   <div id="guide">
-    <h2 style="margin-top:0; color:white;">OMNI-AZUL v1.7</h2>
+    <h2 style="margin-top:0; color:white;">OMNI-AZUL v1.8</h2>
     <p>• <strong>SEARCH:</strong> Distraction-free academic data.</p>
     <p>• <strong>SAFE-AREA:</strong> Optimized for mobile terminals.</p>
     <p>• <strong>SUBJECT LOCK:</strong> Context-aware research.</p>
@@ -173,16 +173,35 @@ async function searchWiki(query) {
 
 async function handleQuery(q) {
     let val = q.toLowerCase().trim();
-    const ethicsWords = ["should", "moral", "right", "wrong", "ethical", "cruel", "humane"];
-    const isEthicsQuery = ethicsWords.some(word => val.includes(word));
 
-    const data = await searchWiki(val);
-    if (data) {
-        lastResult = data;
-        let prefix = isEthicsQuery ? `ETHICAL PROTOCOL: Regarding '${data.title}', there is a significant gap between biological data and moral intuition. While science defines the 'how,' ethics questions the 'why.'\n\n` : "";
-        return { text: prefix + data.extract, url: data.url, geo: data.geo };
+    // 1. MATH INTERCEPT (Precision First)
+    const mathPattern = /^[0-9+\-*/x().\s]+$/;
+    if (mathPattern.test(val.replace('x', '*'))) {
+        try {
+            const result = eval(val.replace('x', '*'));
+            return { text: `MATHEMATICAL PRECISION ACHIEVED: ${val} = ${result}`, geo: "CALC_CORE" };
+        } catch (e) { /* continue if not pure math */ }
     }
-    return { text: "No academic record found. Refine query parameters." };
+
+    // 2. SEARCH WITH QUALITY CHECK
+    const data = await searchWiki(val);
+    
+    // If the data is irrelevant (like the Super Bowl for 2+5) 
+    // or if the search returns nothing, we trigger the "Teacher" response.
+    if (!data || data.extract.length < 100 || val.length < 3) {
+        return { 
+            text: "TERMINAL ERROR: Low-fidelity query detected. \n\nADVICE: Use precise terminology (e.g., 'Feline' instead of 'Cat', 'Physiology' instead of 'Body'). Slang and shorthand are not permitted in the Academic Archive.",
+            geo: "LOGIC_GATE_ACTIVE"
+        };
+    }
+
+    // 3. ETHICAL CONTEXT (Only if query is high-quality)
+    let prefix = "";
+    if (val.includes("ethic") || val.includes("moral")) {
+        prefix = `ETHICAL PROTOCOL: Regarding '${data.title}', there is a significant gap between biological data and moral intuition. While science defines the 'how,' ethics questions the 'why.'\n\n`;
+    }
+
+    return { text: prefix + data.extract, url: data.url, geo: data.geo };
 }
 
 input.addEventListener('keydown', async (e) => {
@@ -205,7 +224,7 @@ input.addEventListener('keydown', async (e) => {
     }
 });
 
-window.onload = () => typeText("OMNI-AZUL v1.7 ONLINE. SUBJECT LOCK ACTIVE.");
+window.onload = () => typeText("OMNI-AZUL v1.8 ONLINE. SUBJECT LOCK ACTIVE.");
 </script>
 </body>
 </html>
