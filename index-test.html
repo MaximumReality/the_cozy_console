@@ -134,15 +134,15 @@ async function typeText(text, url = null, geo = null) {
 async function searchWiki(query) {
     azulSprite.src = "hover-azul.png";
     try {
-        // SUBJECT LOCK: We keep the query intact but add context for academic precision
-        let searchSubject = query.toLowerCase();
-        if (searchSubject.includes("pain") || searchSubject.includes("ethical")) {
-            searchSubject += " animal physiology ethics";
-          searchSubject += " -movie -film -manga"; // This tells Wikipedia: "No movies allowed!"
-
+        // 1. FILTERING: Subtract pop-culture noise
+        let searchTerms = query.toLowerCase() + " -movie -film -fiction -manga -song";
+        
+        // 2. TARGETING: If it's a 'Should we' or 'Can they feel' question, boost biology
+        if (searchTerms.includes("eat") || searchTerms.includes("pain") || searchTerms.includes("ethical")) {
+            searchTerms += " biology physiology ethics";
         }
 
-        const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchSubject)}&format=json&origin=*&srlimit=1`;
+        const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchTerms)}&format=json&origin=*&srlimit=1`;
         const searchRes = await fetch(searchUrl);
         const searchData = await searchRes.json();
 
@@ -152,7 +152,7 @@ async function searchWiki(query) {
             const sumRes = await fetch(sumUrl);
             const sumData = await sumRes.json();
 
-            // TRACKER LOGIC: Fetch Coordinates
+            // TRACKER: Keep the Geo-Coordinates active
             const coordUrl = `https://en.wikipedia.org/w/api.php?action=query&prop=coordinates&titles=${encodeURIComponent(title)}&format=json&origin=*`;
             const cRes = await fetch(coordUrl);
             const cData = await cRes.json();
@@ -169,6 +169,7 @@ async function searchWiki(query) {
     } catch (e) { return null; }
     return null;
 }
+
 
 async function handleQuery(q) {
     let val = q.toLowerCase().trim();
