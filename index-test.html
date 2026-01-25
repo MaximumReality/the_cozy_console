@@ -93,14 +93,19 @@
 <script>
   let sessionLog = []; // This is your digital short-term memory
 
-  const azulFacts = [
-    "NEURO-LOGIC: A neurogenic bladder represents a physical 'Packet Loss'—the hardware remains active, but the Handshake with the CPU has timed out.",
-    "STELLAR ORIGINS: The Phosphorus in human DNA was forged in the heart of a Supernova. The archive of the stars is written in our marrow.",
-    "SYSTEMS THINKING: A mineral is not 'inert'—it is a slow-cycling variable in the planetary life-support system.",
-    "BONE DENSITY: Distraction Osteogenesis proves the biological system can 'Patch' its own hardware when mechanical stress is applied correctly.",
-    "QUANTUM CATS: Azul exists in a superposition of Quantum Physicist and Sandwich-Thief until the kitchen door is observed.",
-    "DATA RESILIENCE: HTML remains the skeletal structure of the 'Whole' web because it defines essence over appearance."
+const azulFacts = [
+    "PHYSIOLOGY: Distraction osteogenesis uses mechanical tension to stimulate osteoblastic activity and lengthen bone tissue.",
+    "QUANTUM: Entanglement occurs when particles become linked such that the state of one instantaneously influences the other regardless of distance.",
+    "ASTRONOMY: The observable universe contains an estimated 2 trillion galaxies, each containing billions of stellar systems.",
+    "NEUROLOGY: The human brain contains approximately 86 billion neurons, forming an estimated 100 trillion synaptic connections.",
+    "BOTANY: Mycelial networks facilitate nutrient and information exchange between disparate plant species via a subterranean 'wood wide web'.",
+    "PHYSICS: The Chandrasekhar limit (1.4 solar masses) determines the maximum mass of a stable white dwarf star before gravitational collapse.",
+    "BIOCHEMISTRY: ATP (Adenosine triphosphate) serves as the primary energy currency for all cellular metabolic processes.",
+    "GEOLOGY: The movement of tectonic plates is driven by mantle convection currents and the gravitational pull of subducting slabs.",
+    "MATHEMATICS: The Golden Ratio (Phi ≈ 1.618) describes logarithmic spirals found in phyllotaxis and galactic structures.",
+    "THERMODYNAMICS: The Second Law states that the total entropy of an isolated system can never decrease over time."
 ];
+
 
 async function triggerFact() {
     const randomFact = azulFacts[Math.floor(Math.random() * azulFacts.length)];
