@@ -1,4 +1,4 @@
-# 👁️ Omni-Azul: Research Partner v1.0
+# 👁️ Omni-Azul: Research Partner v2.X
 
 **Omni-Azul** is a high-utility, retro-terminal research interface designed for focused academic study. It strips away the distractions of the modern web, providing direct access to global archives, coordinate data, and scientific trivia through a sleek, command-line inspired environment.
 
