@@ -137,7 +137,7 @@ async function searchWiki(query) {
         let val = query.toLowerCase().trim();
         let searchSubject = val;
 
-        // 1. FIDELITY ANCHORS: Prevent "Oldboy" or "Saint" drift
+        // FIDELITY ANCHORS: Prevent "Oldboy" or "Saint" drift
         const bioTriggers = ["eat", "sweat", "brain", "nerve", "pain", "intelligent", "consume"];
         if (bioTriggers.some(t => val.includes(t))) {
             searchSubject += " biology physiology -novel -film -book";
@@ -148,7 +148,6 @@ async function searchWiki(query) {
             searchSubject = "Sargasso Sea -saint -vincent";
         }
 
-        // 2. SEARCH: Use 'generator' for higher quality primary matches
         const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(searchSubject)}&gsrlimit=1&prop=extracts|pageimages|coordinates&exintro&explaintext&format=json&origin=*`;
         
         const res = await fetch(searchUrl);
@@ -174,14 +173,11 @@ async function searchWiki(query) {
     return null;
 }
 
-
-
-
 async function handleQuery(q) {
     let val = q.toLowerCase().trim();
     if (!val) return { text: "SYSTEM IDLE: Awaiting input..." };
 
-    // 1. SAFE MATH CORE (Calculates locally, no Wikipedia drift)
+    // 1. SAFE MATH CORE
     const isMath = /^[0-9+\-*/x().\s]+$/.test(val.replace('x', '*'));
     const isSqrt = val.includes("square root");
     
@@ -190,7 +186,6 @@ async function handleQuery(q) {
             let mathExpr = val.replace(/x/g, '*').replace(/square root of /g, 'Math.sqrt(');
             if (isSqrt && !mathExpr.includes(')')) mathExpr += ')';
             
-            // Special handling for RMS (Root Mean Square)
             if (val.includes("rms")) {
                 let nums = val.match(/\d+/g).map(Number);
                 if (nums.length > 0) {
@@ -201,10 +196,10 @@ async function handleQuery(q) {
 
             const result = eval(mathExpr);
             return { text: `MATHEMATICAL PRECISION: ${val} = ${result}`, geo: "MATH_NODE" };
-        } catch (e) { /* If math fails, it will attempt a search instead */ }
+        } catch (e) { }
     }
 
-    // 2. SEARCH ANCHORING (Prevents the 'Oldboy' and 'Musician' pivots)
+    // 2. SEARCH ANCHORING
     let refinedQuery = val;
     if (val === "lead" || val.includes("consume lead")) refinedQuery = "Lead poisoning";
     if (val.includes("octopus") || val.includes("octopi")) refinedQuery = "Octopus intelligence ethics";
@@ -213,7 +208,6 @@ async function handleQuery(q) {
     const data = await searchWiki(refinedQuery);
     
     if (data) {
-        // CULTURAL NOISE FILTER: If we get a movie/band but didn't ask for one
         const noise = ["film", "movie", "band", "album", "song"];
         const isNoise = noise.some(n => data.title.toLowerCase().includes(n));
         const userAskedForArt = ["film", "movie", "music", "actor"].some(n => val.includes(n));
@@ -230,20 +224,6 @@ async function handleQuery(q) {
 
     return { text: "TERMINAL ERROR: No academic record found. Check syntax and terminology.", geo: "VOID_NODE" };
 }
-  // REFINEMENT: Force Wikipedia to ignore Fiction/Movies and focus on Biology
-let anchor = query.toLowerCase();
-
-// If the query is about animals or biology, add specific anchors
-const bioTriggers = ["eat", "sweat", "brain", "nerve", "pain", "intelligent"];
-if (bioTriggers.some(t => anchor.includes(t))) {
-    anchor += " biology -novel -film -book";
-}
-
-// Specific fix for the Sargasso Sea
-if (anchor.includes("saragossa") || anchor.includes("sargasso")) {
-    anchor = "Sargasso Sea -saint";
-}
-
 
 input.addEventListener('keydown', async (e) => {
     if (e.key === 'Enter') {
@@ -265,7 +245,8 @@ input.addEventListener('keydown', async (e) => {
     }
 });
 
-window.onload = () => typeText("OMNI-AZUL v2.0 ONLINE. SUBJECT LOCK ACTIVE.");
+window.onload = () => typeText("OMNI-AZUL v2.1 ONLINE. SUBJECT LOCK ACTIVE.");
 </script>
+
 </body>
 </html>
