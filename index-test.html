@@ -47,6 +47,15 @@
     .bobbing { animation: bob 3s ease-in-out infinite; }
     @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
     a { color: #fff; text-decoration: underline; }
+
+    .fact-text { 
+  color: #ffb000; /* Amber glow for facts */
+  text-shadow: 0 0 8px rgba(255, 176, 0, 0.7);
+  border-left: 2px solid #ffb000;
+  padding-left: 10px;
+  margin: 10px 0;
+}
+
   </style>
 </head>
 <body>
@@ -67,6 +76,12 @@
     <button class="btn-ui" onclick="toggleAmber()">AMBER</button>
     <button class="btn-ui" onclick="output.textContent=''; typeText('TERMINAL PURGED...')">🗑️</button>
     <button class="btn-ui" onclick="window.print()">🖨️</button>
+  <div style="display:flex; gap:8px;">
+    <button class="btn-ui" onclick="triggerFact()">FACT</button> <button class="btn-ui" onclick="toggleAmber()">AMBER</button>
+    <button class="btn-ui" onclick="output.textContent=''; typeText('TERMINAL PURGED...')">🗑️</button>
+    <button class="btn-ui" onclick="window.print()">🖨️</button>
+</div>
+
   </div>
 </div>
 
@@ -80,6 +95,33 @@
 </div>
 
 <script>
+  const azulFacts = [
+    "NEURO-LOGIC: A neurogenic bladder represents a physical 'Packet Loss'—the hardware remains active, but the Handshake with the CPU has timed out.",
+    "STELLAR ORIGINS: The Phosphorus in human DNA was forged in the heart of a Supernova. The archive of the stars is written in our marrow.",
+    "SYSTEMS THINKING: A mineral is not 'inert'—it is a slow-cycling variable in the planetary life-support system.",
+    "BONE DENSITY: Distraction Osteogenesis proves the biological system can 'Patch' its own hardware when mechanical stress is applied correctly.",
+    "QUANTUM CATS: Azul exists in a superposition of Quantum Physicist and Sandwich-Thief until the kitchen door is observed.",
+    "DATA RESILIENCE: HTML remains the skeletal structure of the 'Whole' web because it defines essence over appearance."
+];
+
+async function triggerFact() {
+    const randomFact = azulFacts[Math.floor(Math.random() * azulFacts.length)];
+    azulSprite.src = "hover-azul.png"; // Azul looks up the fact
+    
+    let factContainer = document.createElement("div"); 
+    factContainer.className = "fact-text";
+    output.appendChild(factContainer);
+    
+    let fullText = `[FACT PROTOCOL]: ${randomFact}`;
+    
+    for (let char of fullText) {
+        factContainer.textContent += char; 
+        output.scrollTop = output.scrollHeight;
+        await new Promise(r => setTimeout(r, 15));
+    }
+    azulSprite.src = "waiting_azul.png";
+}
+
 const output = document.getElementById('output');
 const input = document.getElementById('userInput');
 const azulSprite = document.getElementById('azulSprite');
