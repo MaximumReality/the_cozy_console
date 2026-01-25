@@ -82,7 +82,7 @@
 
 <div id="overlay">
   <div id="guide">
-    <h2 style="margin-top:0; color:white;">OMNI-AZUL v1.6</h2>
+    <h2 style="margin-top:0; color:white;">OMNI-AZUL v1.7</h2>
     <p>• <strong>SEARCH:</strong> Any topic for an academic summary.</p>
     <p>• <strong>CITE:</strong> Type 'cite' after a search for MLA.</p>
     <p>• <strong>AMBER:</strong> Switch to eye-friendly amber mode.</p>
@@ -166,24 +166,28 @@ async function typeText(text, url = null, geo = null) {
 async function searchWiki(query) {
     azulSprite.src = "hover-azul.png";
     try {
-        // 1. ENHANCE: Add "physiology" if asking about pain to avoid manga/history bugs
-        let enhancedQuery = query;
-        if (query.toLowerCase().includes("pain")) enhancedQuery += " animal pain physiology";
+        // 1. NO STRIPPING: We use the full query to keep the subject (Dog/Cat)
+        // We only add a 'booster' to help Wikipedia find the biology section
+        let searchTerms = query.toLowerCase();
+        
+        if (searchTerms.includes("pain") || searchTerms.includes("feel")) {
+            searchTerms += " animal physiology";
+        }
 
-        // 2. SEARCH: Get the most relevant article titles
-        const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(enhancedQuery)}&format=json&origin=*&srlimit=1`;
+        // 2. DEEP SEARCH: This finds the specific article title
+        const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchTerms)}&format=json&origin=*&srlimit=1`;
         const searchRes = await fetch(searchUrl);
         const searchData = await searchRes.json();
 
         if (searchData.query.search.length > 0) {
             const title = searchData.query.search[0].title;
 
-            // 3. SUMMARY: Get the academic extract
+            // 3. SUMMARY: Get the clean academic text for that specific title
             const sumUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}?redirect=true`;
             const sumRes = await fetch(sumUrl);
             const sumData = await sumRes.json();
 
-            // 4. COORDINATES: Keep the 'Tracker' data active
+            // 4. GEO COORDINATES: Ensuring the 'Tracker' lore stays active
             const coordUrl = `https://en.wikipedia.org/w/api.php?action=query&prop=coordinates&titles=${encodeURIComponent(title)}&format=json&origin=*`;
             const cRes = await fetch(coordUrl);
             const cData = await cRes.json();
@@ -191,8 +195,7 @@ async function searchWiki(query) {
             const page = cData.query.pages[pageId];
 
             let coords = null;
-            if (page.coordinates) {
-                // Formatting the coordinates for your terminal display
+            if (page && page.coordinates) {
                 coords = `${page.coordinates[0].lat.toFixed(4)}°N, ${page.coordinates[0].lon.toFixed(4)}°W`;
             }
 
@@ -203,12 +206,10 @@ async function searchWiki(query) {
                 geo: coords
             };
         }
-    } catch (e) { 
-        console.error("Omni-Azul Search Error:", e);
-        return null; 
-    }
+    } catch (e) { return null; }
     return null;
 }
+
 
 
 async function handleQuery(q) {
@@ -276,7 +277,7 @@ function showTrivia() {
     typeText(`OMNI-FACT: ${fact}`);
 }
 
-window.onload = () => typeText("OMNI-AZUL v1.6 ONLINE.");
+window.onload = () => typeText("OMNI-AZUL v1.7 ONLINE.");
 </script>
 
 
